@@ -4,6 +4,7 @@ Project.uvguix.PanZi
 Project.uvoptx
 Project.uvprojx
 *.uvguix.*
+*.uvoptx
 # Keil中间文件
 *.o
 *.d
