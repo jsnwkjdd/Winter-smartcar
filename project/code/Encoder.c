@@ -19,7 +19,7 @@ int32_t encoder_data_R=0;
 	 return encoder_data_L;
  }
  
-  int16_t Get_Encoder_Data_Right()
+ int16_t Get_Encoder_Data_Right()
  {
 	 encoder_data_R = encoder_get_count(ENCODER_QUADDEC_R);
 	 return encoder_data_R;

@@ -12,7 +12,7 @@
 #define ENCODER_QUADDEC_R                 (TIM4_ENCODER)                //右      // 正交编码器对应使用的编码器接口 这里使用 TIM4 的编码器功能
 #define ENCODER_QUADDEC_R_A               (TIM4_ENCODER_CH1_B6)                   // A 相对应的引脚
 #define ENCODER_QUADDEC_R_B               (TIM4_ENCODER_CH2_B7)                   // B 相对应的引脚
-
+#include <stdint.h>
 
 void Encoder_Init();
 int16_t Get_Encoder_Data_Left();
