@@ -34,19 +34,21 @@
 ********************************************************************************************************************/
 
 #include "zf_common_headfile.h"
-
+#include "Encoder.h"
 // 打开新的工程或者工程移动了位置务必执行以下操作
 // 第一步 关闭上面所有打开的文件
 // 第二步 project->clean  等待下方进度条走完
 
 // 本例程是开源库移植用空工程
-
+int encoderleft=0;
+int encoderright=0;
 // **************************** 代码区域 ****************************
 int main(void)
 {
     clock_init(SYSTEM_CLOCK_120M);                                              // 初始化芯片时钟 工作频率为 120MHz
     debug_init();                                                               // 初始化默认 Debug UART
-
+	  pit_ms_init(PIT, 1);                                                      // 初始化 PIT（TIM6_PIT） 为周期中断 1ms 周期
+	  interrupt_set_priority(PIT_PRIORITY, 0);                                    // 设置 PIT 对周期中断的中断优先级为 0
     // 此处编写用户代码 例如外设初始化代码等
     
     // 此处编写用户代码 例如外设初始化代码等
@@ -58,3 +60,18 @@ int main(void)
     }
 }
 // **************************** 代码区域 ****************************
+/*
+		此为编码器的中断，isr.c中见tim6
+*/
+void pit_handler (void)
+{
+    encoderleft = Get_Encoder_Data_Left();              // 获取编码器计数（并非标准单位）
+    encoderright = Get_Encoder_Data_Right();            // 获取编码器计数（并非标准单位）
+		/* 
+			如要获得转/秒，请用此公式
+			encoderleft = Get_Encoder_Data_Left()/52/0.01/34;		//公式：编码器值/一圈计数值/减速比/周期（单位：转/秒）  
+			encoderright = Get_Encoder_Data_Right()/52/0.01/34;	
+	*/
+    encoder_clear_count(ENCODER_QUADDEC_L);                                       // 清空编码器计数
+    encoder_clear_count(ENCODER_QUADDEC_R);                                           // 清空编码器计数
+}
