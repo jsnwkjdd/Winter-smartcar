@@ -35,6 +35,7 @@
 
 #include "zf_common_headfile.h"
 #include "Encoder.h"
+#include "bluetooth.h"
 // 打开新的工程或者工程移动了位置务必执行以下操作
 // 第一步 关闭上面所有打开的文件
 // 第二步 project->clean  等待下方进度条走完
@@ -48,7 +49,11 @@ int main(void)
     clock_init(SYSTEM_CLOCK_120M);                                              // 初始化芯片时钟 工作频率为 120MHz
     debug_init();                                                               // 初始化默认 Debug UART
 	  pit_ms_init(PIT, 1);                                                      // 初始化 PIT（TIM6_PIT） 为周期中断 1ms 周期
-	  interrupt_set_priority(PIT_PRIORITY, 0);                                    // 设置 PIT 对周期中断的中断优先级为 0
+	  interrupt_set_priority(PIT_PRIORITY, 0);
+	bluetooth_ch9141_init();
+	int8 a=6;
+	printf("%d",a);
+	// 设置 PIT 对周期中断的中断优先级为 0
     // 此处编写用户代码 例如外设初始化代码等
     
     // 此处编写用户代码 例如外设初始化代码等
