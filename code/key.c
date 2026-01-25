@@ -1,9 +1,5 @@
-#include "zf_driver_timer.h"
-#include "zf_driver_gpio.h"
 #include "key.h"
 #include "zf_common_headfile.h"
-#include "zf_device_key.h"
-#include "zf_common_debug.h"
 
 
 // 正确的按键初始化函数
