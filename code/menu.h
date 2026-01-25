@@ -3,6 +3,7 @@
 
 #include "zf_device_tft180.h"
 #include "key.h"
+#include "zf_common_headfile.h"
 
 extern float kp;
 extern float ki;
