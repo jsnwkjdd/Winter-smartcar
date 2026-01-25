@@ -2,16 +2,16 @@
 #define __ENCODER_H
 
 
-#define PIT                             (TIM6_PIT )                             // Ê¹ÓÃµÄÖÜÆÚÖÐ¶Ï±àºÅ Èç¹ûÐÞ¸Ä ÐèÒªÍ¬²½¶ÔÓ¦ÐÞ¸ÄÖÜÆÚÖÐ¶Ï±àºÅÓë isr.c ÖÐµÄµ÷ÓÃ
-#define PIT_PRIORITY                    (TIM6_IRQn)                             // ¶ÔÓ¦ÖÜÆÚÖÐ¶ÏµÄÖÐ¶Ï±àºÅ ÔÚ mm32f3277gx.h Í·ÎÄ¼þÖÐ²é¿´ IRQn_Type Ã¶¾ÙÌå
-
-#define ENCODER_QUADDEC_L                 (TIM3_ENCODER)                //×ó      // Õý½»±àÂëÆ÷¶ÔÓ¦Ê¹ÓÃµÄ±àÂëÆ÷½Ó¿Ú ÕâÀïÊ¹ÓÃ TIM3 µÄ±àÂëÆ÷¹¦ÄÜ
-#define ENCODER_QUADDEC_L_A               (TIM3_ENCODER_CH1_B4)                   // A Ïà¶ÔÓ¦µÄÒý½Å
-#define ENCODER_QUADDEC_L_B               (TIM3_ENCODER_CH2_B5)                   // B Ïà¶ÔÓ¦µÄÒý½Å
-
-#define ENCODER_QUADDEC_R                 (TIM4_ENCODER)                //ÓÒ      // Õý½»±àÂëÆ÷¶ÔÓ¦Ê¹ÓÃµÄ±àÂëÆ÷½Ó¿Ú ÕâÀïÊ¹ÓÃ TIM4 µÄ±àÂëÆ÷¹¦ÄÜ
-#define ENCODER_QUADDEC_R_A               (TIM4_ENCODER_CH1_B6)                   // A Ïà¶ÔÓ¦µÄÒý½Å
-#define ENCODER_QUADDEC_R_B               (TIM4_ENCODER_CH2_B7)                   // B Ïà¶ÔÓ¦µÄÒý½Å
+#define PIT                             (TIM6_PIT )                 // ä½¿ç”¨çš„å‘¨æœŸä¸­æ–­ç¼–å· å¦‚æžœä¿®æ”¹ éœ€è¦åŒæ­¥å¯¹åº”ä¿®æ”¹å‘¨æœŸä¸­æ–­ç¼–å·ä¸Ž isr.c ä¸­çš„è°ƒç”¨  
+#define PIT_PRIORITY                    (TIM6_IRQn)                 // å¯¹åº”å‘¨æœŸä¸­æ–­çš„ä¸­æ–­ç¼–å· åœ¨ mm32f3277gx.h å¤´æ–‡ä»¶ä¸­æŸ¥çœ‹ IRQn_Type æžšä¸¾ä½“
+																																		// æ­£äº¤ç¼–ç å™¨å¯¹åº”ä½¿ç”¨çš„ç¼–ç å™¨æŽ¥å£ è¿™é‡Œä½¿ç”¨ TIM3 çš„ç¼–ç å™¨åŠŸèƒ½
+#define ENCODER_QUADDEC_L                 (TIM3_ENCODER)            // A ç›¸å¯¹åº”çš„å¼•è„š
+#define ENCODER_QUADDEC_L_A               (TIM3_ENCODER_CH1_B4)     // B ç›¸å¯¹åº”çš„å¼•è„š
+#define ENCODER_QUADDEC_L_B               (TIM3_ENCODER_CH2_B5)     
+																																																																	
+#define ENCODER_QUADDEC_R                 (TIM4_ENCODER)            // å¸¦æ–¹å‘ç¼–ç å™¨å¯¹åº”ä½¿ç”¨çš„ç¼–ç å™¨æŽ¥å£ è¿™é‡Œä½¿ç”¨ TIM4 çš„ç¼–ç å™¨åŠŸèƒ½
+#define ENCODER_QUADDEC_R_A               (TIM4_ENCODER_CH1_B6)     // PULSE å¯¹åº”çš„å¼•è„š
+#define ENCODER_QUADDEC_R_B               (TIM4_ENCODER_CH2_B7)     // DIR å¯¹åº”çš„å¼•è„š
 #include <stdint.h>
 
 void Encoder_Init();

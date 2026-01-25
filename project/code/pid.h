@@ -1,7 +1,7 @@
 #ifndef __PID_H
 #define __PID_H
 /*
-	ÕâÊÇÒ»¸öpid½á¹¹ÌåÀı×Ó
+	è¿™æ˜¯ä¸€ä¸ªpidç»“æ„ä½“å®šä¹‰çš„ä¾‹å­ï¼ˆå¯ä»¥å†æ”¹åŠ¨ï¼‰
 */
 //PID_t AnglePID = {
 //	.Kp = 3,
@@ -24,8 +24,8 @@ typedef struct {
 	float Error1;
 	float ErrorInt; 
 	
-	float OutMax;  //×î´óÏŞ·ù
-	float OutMin;  //×îĞ¡ÏŞ·ù
+	float OutMax;  //æœ€å¤§é™å¹…
+	float OutMin;  //æœ€å°é™å¹…
 } PID_t;
 
 void PID_Init(PID_t *p);
