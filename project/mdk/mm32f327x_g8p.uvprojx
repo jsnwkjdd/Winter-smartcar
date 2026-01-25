@@ -419,6 +419,16 @@
               <FileType>5</FileType>
               <FilePath>..\code\mpu6050.h</FilePath>
             </File>
+            <File>
+              <FileName>bluetooth.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\bluetooth.c</FilePath>
+            </File>
+            <File>
+              <FileName>bluetooth.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\code\bluetooth.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
