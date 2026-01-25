@@ -48,8 +48,8 @@ int main(void)
 {
     clock_init(SYSTEM_CLOCK_120M);                                              // 初始化芯片时钟 工作频率为 120MHz
     debug_init();                                                               // 初始化默认 Debug UART
-	  pit_ms_init(PIT, 1);                                                      // 初始化 PIT（TIM6_PIT） 为周期中断 1ms 周期
-	  interrupt_set_priority(PIT_PRIORITY, 0);
+	pit_ms_init(PIT, 1);                                                      // 初始化 PIT（TIM6_PIT） 为周期中断 1ms 周期
+	interrupt_set_priority(PIT_PRIORITY, 0);
 	bluetooth_ch9141_init();
 	int8 a=6;
 	printf("%d",a);
