@@ -1,6 +1,6 @@
-#include "zf_device_tft180.h"
 #include "key.h"
 #include "zf_common_headfile.h"
+#include "menu.h"
 
 int32_t mode=0,hang=1,change=0;
 float kp=0.0;
