@@ -325,7 +325,9 @@ GETCHAR_PROTOTYPE
     }
     return data;
 }
+
 #else
+
 int32_t fputc (int32_t ch, FILE* f)
 {
     if(zf_debug_init_flag)
@@ -334,7 +336,6 @@ int32_t fputc (int32_t ch, FILE* f)
     }
     return ch;
 }
-
 int fgetc(FILE *f)
 {
     int data = 0;
