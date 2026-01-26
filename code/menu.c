@@ -7,6 +7,12 @@ float kp=0.0;
 float ki=0.0;
 float kd=0.0;
 
+//屏幕初始化函数
+void menu_init(void)
+{
+	tft180_init();
+}
+
 //显示函数
 void show(void)
 {
@@ -44,7 +50,7 @@ void show(void)
 
 
 //按键检测函数
-void button(void)
+void menu_key(void)
 {
 	if(key_getstate(KEY_1)==KEY_MAX_SHOCK_PERIOD)
 	{
