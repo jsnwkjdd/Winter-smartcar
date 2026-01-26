@@ -38,6 +38,8 @@
 #include "bluetooth.h"
 #include "mpu6050.h"
 extern int16_t acc_xbias,acc_ybias,acc_zbias,gyro_xbias,gyro_ybias,gyro_zbias;//零飘校准
+extern float gyro_x,gyro_y,gyro_z,acc_x,acc_y,acc_z;//数据处理中间量
+extern float AX,AY,AZ,GX,GY,GZ,AngleX,AngleY,AngleZ;//互补滤波中间量
 float Pitch;
 int16_t f=1;
 // 打开新的工程或者工程移动了位置务必执行以下操作
@@ -58,7 +60,7 @@ int main(void)
 	mpu6050_init();
 	int8 a=6;
 	printf("%d",a);
-	sum_Pitch(&acc_xbias,&acc_zbias,&gyro_ybias);
+	//sum_Pitch(&acc_xbias,&acc_zbias,&gyro_ybias);
 	f=2;
 	// 设置 PIT 对周期中断的中断优先级为 0
     // 此处编写用户代码 例如外设初始化代码等
@@ -80,7 +82,7 @@ void pit_handler (void)
 	if(f==2)
 	{
 		mpu6050estimation_Pitch(&Pitch);
-		printf("%f\n",Pitch);
+		printf("[plot,%f\r\n]",AngleY);
 	}
     encoderleft = Get_Encoder_Data_Left();              // 获取编码器计数（并非标准单位）
     encoderright = Get_Encoder_Data_Right();            // 获取编码器计数（并非标准单位）
