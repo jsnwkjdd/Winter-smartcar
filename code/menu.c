@@ -10,6 +10,9 @@ float kd=0.0;
 //屏幕初始化函数
 void menu_init(void)
 {
+	tft180_set_dir(TFT180_PORTAIT);
+	tft180_set_font(TFT180_6X8_FONT);
+	tft180_set_color(RGB565_WHITE, RGB565_BLACK);
 	tft180_init();
 }
 
