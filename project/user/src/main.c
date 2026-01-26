@@ -37,9 +37,9 @@
 #include "Encoder.h"
 #include "bluetooth.h"
 #include "mpu6050.h"
+#include "pid.h"
+#include "motor.h"
 extern int16_t acc_xbias,acc_ybias,acc_zbias,gyro_xbias,gyro_ybias,gyro_zbias;//零飘校准
-extern float gyro_x,gyro_y,gyro_z,acc_x,acc_y,acc_z;//数据处理中间量
-extern float AX,AY,AZ,GX,GY,GZ,AngleX,AngleY,AngleZ;//互补滤波中间量
 float Pitch;
 int16_t f=1;
 // 打开新的工程或者工程移动了位置务必执行以下操作
@@ -49,6 +49,17 @@ int16_t f=1;
 // 本例程是开源库移植用空工程
 int encoderleft=0;
 int encoderright=0;
+int16_t LeftPWM, RightPWM;
+int16_t AvePWM, DifPWM;
+extern float AngleY;
+PID_t AnglePID = {
+	.Kp = 100,
+	.Ki = 5,
+	.Kd = 0,
+	
+	.OutMax = 100,
+	.OutMin = -100,
+};
 // **************************** 代码区域 ****************************
 int main(void)
 {
@@ -56,11 +67,12 @@ int main(void)
     debug_init();                                                               // 初始化默认 Debug UART
 	pit_ms_init(PIT, 1);                                                      // 初始化 PIT（TIM6_PIT） 为周期中断 1ms 周期
 	interrupt_set_priority(PIT_PRIORITY, 0);
+	Motor_Init();
 	bluetooth_ch9141_init();
 	mpu6050_init();
 	int8 a=6;
 	printf("%d",a);
-	//sum_Pitch(&acc_xbias,&acc_zbias,&gyro_ybias);
+	sum_Pitch(&acc_xbias,&acc_zbias,&gyro_ybias);
 	f=2;
 	// 设置 PIT 对周期中断的中断优先级为 0
     // 此处编写用户代码 例如外设初始化代码等
@@ -69,7 +81,6 @@ int main(void)
     while(1)
     {
         // 此处编写需要循环执行的代码
-        
         // 此处编写需要循环执行的代码
     }
 }
@@ -77,12 +88,32 @@ int main(void)
 /*
 		此为编码器的中断，isr.c中见tim6
 */
+int cnt=0;
+int cnt1=0;
 void pit_handler (void)
-{
-	if(f==2)
-	{
-		mpu6050estimation_Pitch(&Pitch);
-		printf("[plot,%f\r\n]",AngleY);
+{	
+	cnt++;
+	cnt1++;
+	printf("[plot,%f\r\n]",AngleY);
+//	if(cnt==5)
+//	{
+//		mpu6050estimation_Pitch(&Pitch);
+////	  printf("[plot,%f\r\n]",AngleY);
+//		cnt=0;
+//	}
+	if(cnt1==10){
+//		mpu6050estimation_Pitch(&Pitch);
+//	  printf("[plot,%f\r\n]",AngleY);
+		AnglePID.Actual = -AngleY;
+		PID_Update(&AnglePID);
+		AvePWM = -AnglePID.Out;
+		LeftPWM = AvePWM;
+		RightPWM = AvePWM;
+//		if (LeftPWM > 100) {LeftPWM = 100;} else if (LeftPWM < -100) {LeftPWM = -100;}
+//		if (RightPWM > 100) {RightPWM = 100;} else if (RightPWM < -100) {RightPWM = -100;}
+		Motor_SetSpeedleft(LeftPWM*100);
+		Motor_SetSpeedright(RightPWM*100);
+		cnt1=0;
 	}
     encoderleft = Get_Encoder_Data_Left();              // 获取编码器计数（并非标准单位）
     encoderright = Get_Encoder_Data_Right();            // 获取编码器计数（并非标准单位）
