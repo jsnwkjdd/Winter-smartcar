@@ -40,6 +40,7 @@
 #include "pid.h"
 #include "motor.h"
 #include "menu.h"
+#include "key.h"
 extern int16_t acc_xbias,acc_ybias,acc_zbias,gyro_xbias,gyro_ybias,gyro_zbias;//零飘校准
 extern float gyro_x,gyro_y,gyro_z,acc_x,acc_y,acc_z;//数据处理中间量
 float Pitch;
@@ -55,9 +56,9 @@ int16_t LeftPWM, RightPWM;
 int16_t AvePWM, DifPWM;
 extern float AngleY;
 PID_t AnglePID = {
-	.Kp = 1.2,
-	.Ki = 0.06,
-	.Kd = 1,
+	.Kp = 1,
+	.Ki = 0,
+	.Kd = 0,
 	.Target=0,
 	.OutMax = 100,
 	.OutMin = -100,
@@ -71,6 +72,8 @@ int main(void)
 	interrupt_set_priority(PIT_PRIORITY, 0);
 	Motor_Init();
 	mpu6050_init();
+	my_key_init();
+	timer_key();
 	menu_init();
 	PID_Init(&AnglePID);
 			Motor_SetSpeedleft(0);
@@ -83,7 +86,8 @@ int main(void)
     while(1)
     {
 		//printf("%f\n",Pitch);
-			tft180_show_int(0, 0,Pitch , 3);   
+		menu_key();
+			tft180_show_int(0, 110,Pitch , 3);   
 		//tft180_show_int(0, 30,acc_z , 3); 
         // 此处编写需要循环执行的代码
 //			Motor_SetSpeedright(7000);
