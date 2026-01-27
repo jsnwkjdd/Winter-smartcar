@@ -55,10 +55,10 @@ int16_t LeftPWM, RightPWM;
 int16_t AvePWM, DifPWM;
 extern float AngleY;
 PID_t AnglePID = {
-	.Kp = 1,
-	.Ki = 0,
-	.Kd = 0,
-	
+	.Kp = 1.2,
+	.Ki = 0.06,
+	.Kd = 1,
+	.Target=0,
 	.OutMax = 100,
 	.OutMin = -100,
 };
@@ -69,14 +69,12 @@ int main(void)
     debug_init();                                                               // 初始化默认 Debug UART
 	pit_ms_init(PIT, 1);                                                      // 初始化 PIT（TIM6_PIT） 为周期中断 1ms 周期
 	interrupt_set_priority(PIT_PRIORITY, 0);
-	//Motor_Init();
-	//bluetooth_ch9141_init();
+	Motor_Init();
 	mpu6050_init();
 	menu_init();
-	//int8 a=6;
-	//printf("%d",a);
-	//sum_Pitch(&acc_xbias,&acc_zbias,&gyro_ybias);
-	//f=2;
+	PID_Init(&AnglePID);
+			Motor_SetSpeedleft(0);
+		Motor_SetSpeedright(0);
 	// 设置 PIT 对周期中断的中断优先级为 0
     // 此处编写用户代码 例如外设初始化代码等
 //    	Motor_SetSpeedright(7000);
@@ -85,7 +83,7 @@ int main(void)
     while(1)
     {
 		//printf("%f\n",Pitch);
-		tft180_show_int(0, 0,Pitch , 3);   
+			tft180_show_int(0, 0,Pitch , 3);   
 		//tft180_show_int(0, 30,acc_z , 3); 
         // 此处编写需要循环执行的代码
 //			Motor_SetSpeedright(7000);
@@ -102,32 +100,27 @@ int cnt1=0;
 void pit_handler (void)
 {	
 	
-	
-	/*if(f==2){
 	cnt++;
-	//cnt1++;*/
-//printf("[plot,%f\r\n]",AngleY);
-	//if(cnt==20)
-	//{
+	cnt1++;
+	if(cnt==20)
+	{
 		mpu6050estimation_Pitch(&Pitch);  
-//	  printf("[plot,%f\r\n]",AngleY);
-		//cnt=0;
-	//}/*
-	/*if(cnt1==40){
-//		mpu6050estimation_Pitch(&Pitch);
-//	  printf("[plot,%f\r\n]",AngleY);
-		AnglePID.Actual = -AngleY;
+		cnt=0;
+	}
+	if(cnt1==30){
+		mpu6050estimation_Pitch(&Pitch);
+	  printf("[plot,%f\r\n]",AngleY);
+		AnglePID.Actual = -Pitch;
 		PID_Update(&AnglePID);
 		AvePWM = -AnglePID.Out;
 		LeftPWM = AvePWM;
 		RightPWM = AvePWM;
 		if (LeftPWM > 100) {LeftPWM = 100;} else if (LeftPWM < -100) {LeftPWM = -100;}
 		if (RightPWM > 100) {RightPWM = 100;} else if (RightPWM < -100) {RightPWM = -100;}
-		Motor_SetSpeedleft(LeftPWM*100);
-		Motor_SetSpeedright(RightPWM*100);
+		Motor_SetSpeedleft(LeftPWM*320);
+		Motor_SetSpeedright(RightPWM*320);
 		cnt1=0;
-	}
-}
+	}/*
     encoderleft = Get_Encoder_Data_Left();              // 获取编码器计数（并非标准单位）
     encoderright = Get_Encoder_Data_Right();            // 获取编码器计数（并非标准单位）
 		

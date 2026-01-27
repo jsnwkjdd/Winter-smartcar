@@ -5,7 +5,7 @@
 float gyro_x,gyro_y,gyro_z,acc_x,acc_y,acc_z;//数据处理中间量
 float AX,AY,AZ,GX,GY,GZ,AngleX,AngleY,AngleZ;//互补滤波中间量
 float AlphaX = 0.001,AlphaPitch = 0.01;//互补滤波参数
-float t=0.001;//t角速度积分，和定时中断同步
+float t=0.02;//t角速度积分，和定时中断同步
 int16_t acc_xbias=130,acc_ybias,acc_zbias,gyro_xbias,gyro_ybias,gyro_zbias;//零飘校准
 
 
