@@ -39,7 +39,9 @@
 #include "mpu6050.h"
 #include "pid.h"
 #include "motor.h"
+#include "menu.h"
 extern int16_t acc_xbias,acc_ybias,acc_zbias,gyro_xbias,gyro_ybias,gyro_zbias;//零飘校准
+extern float gyro_x,gyro_y,gyro_z,acc_x,acc_y,acc_z;//数据处理中间量
 float Pitch;
 int16_t f=1;
 // 打开新的工程或者工程移动了位置务必执行以下操作
@@ -67,13 +69,14 @@ int main(void)
     debug_init();                                                               // 初始化默认 Debug UART
 	pit_ms_init(PIT, 1);                                                      // 初始化 PIT（TIM6_PIT） 为周期中断 1ms 周期
 	interrupt_set_priority(PIT_PRIORITY, 0);
-	Motor_Init();
-	bluetooth_ch9141_init();
+	//Motor_Init();
+	//bluetooth_ch9141_init();
 	mpu6050_init();
-	int8 a=6;
-	printf("%d",a);
-	sum_Pitch(&acc_xbias,&acc_zbias,&gyro_ybias);
-	f=2;
+	menu_init();
+	//int8 a=6;
+	//printf("%d",a);
+	//sum_Pitch(&acc_xbias,&acc_zbias,&gyro_ybias);
+	//f=2;
 	// 设置 PIT 对周期中断的中断优先级为 0
     // 此处编写用户代码 例如外设初始化代码等
 //    	Motor_SetSpeedright(7000);
@@ -81,6 +84,9 @@ int main(void)
     // 此处编写用户代码 例如外设初始化代码等
     while(1)
     {
+		//printf("%f\n",Pitch);
+		tft180_show_int(0, 0,Pitch , 3);   
+		//tft180_show_int(0, 30,acc_z , 3); 
         // 此处编写需要循环执行的代码
 //			Motor_SetSpeedright(7000);
 //			Motor_SetSpeedleft(7000);
@@ -94,17 +100,20 @@ int main(void)
 int cnt=0;
 int cnt1=0;
 void pit_handler (void)
-{	if(f==2){
+{	
+	
+	
+	/*if(f==2){
 	cnt++;
-	cnt1++;
-//	printf("[plot,%f\r\n]",AngleY);
-	if(cnt==20)
-	{
-		mpu6050estimation_Pitch(&Pitch);
+	//cnt1++;*/
+//printf("[plot,%f\r\n]",AngleY);
+	//if(cnt==20)
+	//{
+		mpu6050estimation_Pitch(&Pitch);  
 //	  printf("[plot,%f\r\n]",AngleY);
-		cnt=0;
-	}
-	if(cnt1==40){
+		//cnt=0;
+	//}/*
+	/*if(cnt1==40){
 //		mpu6050estimation_Pitch(&Pitch);
 //	  printf("[plot,%f\r\n]",AngleY);
 		AnglePID.Actual = -AngleY;
@@ -121,11 +130,13 @@ void pit_handler (void)
 }
     encoderleft = Get_Encoder_Data_Left();              // 获取编码器计数（并非标准单位）
     encoderright = Get_Encoder_Data_Right();            // 获取编码器计数（并非标准单位）
-		/* 
+		
 			如要获得转/秒，请用此公式
 			encoderleft = Get_Encoder_Data_Left()/52/0.01/34;		//公式：编码器值/一圈计数值/减速比/周期（单位：转/秒）  
 			encoderright = Get_Encoder_Data_Right()/52/0.01/34;	
-	*/
+	
     encoder_clear_count(ENCODER_QUADDEC_L);                                       // 清空编码器计数
-    encoder_clear_count(ENCODER_QUADDEC_R);                                           // 清空编码器计数
+    encoder_clear_count(ENCODER_QUADDEC_R); 
+*/
+// 清空编码器计数
 }

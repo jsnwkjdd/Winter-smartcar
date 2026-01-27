@@ -38,8 +38,9 @@ void sensorget_joystick(int8_t*LX,int8_t*LY,int8_t*RX,int8_t*RY)
 我把zf_common_debug.c中调试串口的重定向注释掉了，
 只能重定向一次，所以要用那个调试的话，把这个注释掉，那个恢复
   */
+/*
 int fputc(int ch, FILE *f)
 {
 	uart_write_byte(BLUETOOTH_CH9141_INDEX, ch);                      // 发送数据，将printf的底层重定向蓝牙
 	return ch;
-}
+}*/
