@@ -53,8 +53,8 @@ int16_t LeftPWM, RightPWM;
 int16_t AvePWM, DifPWM;
 extern float AngleY;
 PID_t AnglePID = {
-	.Kp = 100,
-	.Ki = 5,
+	.Kp = 1,
+	.Ki = 0,
 	.Kd = 0,
 	
 	.OutMax = 100,
@@ -76,11 +76,14 @@ int main(void)
 	f=2;
 	// 设置 PIT 对周期中断的中断优先级为 0
     // 此处编写用户代码 例如外设初始化代码等
-    
+//    	Motor_SetSpeedright(7000);
+//			Motor_SetSpeedleft(7000);
     // 此处编写用户代码 例如外设初始化代码等
     while(1)
     {
         // 此处编写需要循环执行的代码
+//			Motor_SetSpeedright(7000);
+//			Motor_SetSpeedleft(7000);
         // 此处编写需要循环执行的代码
     }
 }
@@ -91,17 +94,17 @@ int main(void)
 int cnt=0;
 int cnt1=0;
 void pit_handler (void)
-{	
+{	if(f==2){
 	cnt++;
 	cnt1++;
-	printf("[plot,%f\r\n]",AngleY);
-//	if(cnt==5)
-//	{
-//		mpu6050estimation_Pitch(&Pitch);
-////	  printf("[plot,%f\r\n]",AngleY);
-//		cnt=0;
-//	}
-	if(cnt1==10){
+//	printf("[plot,%f\r\n]",AngleY);
+	if(cnt==20)
+	{
+		mpu6050estimation_Pitch(&Pitch);
+//	  printf("[plot,%f\r\n]",AngleY);
+		cnt=0;
+	}
+	if(cnt1==40){
 //		mpu6050estimation_Pitch(&Pitch);
 //	  printf("[plot,%f\r\n]",AngleY);
 		AnglePID.Actual = -AngleY;
@@ -109,12 +112,13 @@ void pit_handler (void)
 		AvePWM = -AnglePID.Out;
 		LeftPWM = AvePWM;
 		RightPWM = AvePWM;
-//		if (LeftPWM > 100) {LeftPWM = 100;} else if (LeftPWM < -100) {LeftPWM = -100;}
-//		if (RightPWM > 100) {RightPWM = 100;} else if (RightPWM < -100) {RightPWM = -100;}
+		if (LeftPWM > 100) {LeftPWM = 100;} else if (LeftPWM < -100) {LeftPWM = -100;}
+		if (RightPWM > 100) {RightPWM = 100;} else if (RightPWM < -100) {RightPWM = -100;}
 		Motor_SetSpeedleft(LeftPWM*100);
 		Motor_SetSpeedright(RightPWM*100);
 		cnt1=0;
 	}
+}
     encoderleft = Get_Encoder_Data_Left();              // 获取编码器计数（并非标准单位）
     encoderright = Get_Encoder_Data_Right();            // 获取编码器计数（并非标准单位）
 		/* 
