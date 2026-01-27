@@ -1,4 +1,5 @@
 #include "zf_driver_gpio.h"
+uint8_t protectflag;
 /*
 功能：端口初始化：上拉输入模式
 参数/返回值：无
@@ -20,7 +21,7 @@ void sensor_init()
 */
 uint8_t IRSensorL1_Get(void)//检测红外左一
 {
-	if(gpio_get_level(D5)==1)//看接线来改改引脚对应关系
+	if(gpio_get_level(B2)==1)//看接线来改改引脚对应关系
 	{return 0x08;}
 	else 
 	{return 0x00;}	
@@ -28,7 +29,7 @@ uint8_t IRSensorL1_Get(void)//检测红外左一
 
 uint8_t IRSensorL2_Get(void)//左二
 {
-	if(gpio_get_level(D6)==1)//看接线来改改引脚对应关系
+	if(gpio_get_level(B3)==1)//看接线来改改引脚对应关系
 	{return 0x04;}
 	else 
 	{return 0x00;}
@@ -36,7 +37,7 @@ uint8_t IRSensorL2_Get(void)//左二
 
 uint8_t IRSensorR2_Get(void)//右二（中间的）
 {
-	if(gpio_get_level(B2)==1)
+	if(gpio_get_level(D5)==1)
 	{return 0x02;}
 	else 
 	{return 0x00;}
@@ -44,7 +45,7 @@ uint8_t IRSensorR2_Get(void)//右二（中间的）
 
 uint8_t IRSensorR1_Get(void)//右一
 {
-	if(gpio_get_level(B3)==1)
+	if(gpio_get_level(D6)==1)
 	{return 0x01;}
 	else 
 	{return 0x00;}
@@ -64,6 +65,53 @@ uint8 sensor(void)
 	state=IRSensorL1_Get()|IRSensorL2_Get()|IRSensorR2_Get()|IRSensorR1_Get();
 	return state;
 }
+
+
+/*
+功能：循迹逻辑
+参数/返回值：void
+*/
+
+void control(void)
+{
+	
+	switch (sensor())//switch运算速度比if快很多
+			{
+				case 6:		//表明状态为0110 直行
+					
+				
+				
+				break;
+				case 2: //0010右转
+					
+				
+				
+				break;
+				case 4://0100左转
+			
+				
+				break;
+				case 8://1000猛左转
+					
+				
+				
+				break;
+				case 1://1000猛右转
+					
+			
+			
+				break;
+				case 0:
+					
+					
+				break;
+				default:
+				break;
+			}
+	
+}
+
+
 /*
 1代表黑线，0白
 对应表：
