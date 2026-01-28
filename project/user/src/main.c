@@ -41,6 +41,7 @@
 #include "motor.h"
 #include "menu.h"
 #include "key.h"
+#include "flash.h"
 extern int16_t acc_xbias,acc_ybias,acc_zbias,gyro_xbias,gyro_ybias,gyro_zbias;//零飘校准
 extern float gyro_x,gyro_y,gyro_z,acc_x,acc_y,acc_z;//数据处理中间量
 float Pitch;
@@ -75,6 +76,7 @@ int main(void)
 	my_key_init();
 	timer_key();
 	menu_init();
+//	menu_load();
 	PID_Init(&AnglePID);
 			Motor_SetSpeedleft(0);
 		Motor_SetSpeedright(0);
@@ -87,7 +89,8 @@ int main(void)
     {
 		//printf("%f\n",Pitch);
 		menu_key();
-			tft180_show_int(0, 110,Pitch , 3);   
+//		menu_save();
+			tft180_show_int(0, 110,-Pitch-2 , 3);
 		//tft180_show_int(0, 30,acc_z , 3); 
         // 此处编写需要循环执行的代码
 //			Motor_SetSpeedright(7000);
@@ -101,30 +104,31 @@ int main(void)
 */
 int cnt=0;
 int cnt1=0;
+int cnt2=0;
 void pit_handler (void)
 {	
 	
 	cnt++;
 	cnt1++;
-	if(cnt==20)
+	if(cnt==10)
 	{
 		mpu6050estimation_Pitch(&Pitch);  
 		cnt=0;
 	}
-	if(cnt1==30){
-		mpu6050estimation_Pitch(&Pitch);
+	if(cnt1==20){
 	  printf("[plot,%f\r\n]",AngleY);
-		AnglePID.Actual = -Pitch;
+		AnglePID.Actual = -Pitch-2;
 		PID_Update(&AnglePID);
 		AvePWM = -AnglePID.Out;
 		LeftPWM = AvePWM;
 		RightPWM = AvePWM;
 		if (LeftPWM > 100) {LeftPWM = 100;} else if (LeftPWM < -100) {LeftPWM = -100;}
 		if (RightPWM > 100) {RightPWM = 100;} else if (RightPWM < -100) {RightPWM = -100;}
-		Motor_SetSpeedleft(LeftPWM*320);
-		Motor_SetSpeedright(RightPWM*320);
+		Motor_SetSpeedleft(LeftPWM*350);
+		Motor_SetSpeedright(RightPWM*350);
 		cnt1=0;
-	}/*
+	}
+	/*
     encoderleft = Get_Encoder_Data_Left();              // 获取编码器计数（并非标准单位）
     encoderright = Get_Encoder_Data_Right();            // 获取编码器计数（并非标准单位）
 		

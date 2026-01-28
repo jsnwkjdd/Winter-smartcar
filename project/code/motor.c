@@ -14,11 +14,11 @@ void Motor_Init(void)
   gpio_init(A2, GPO, GPIO_HIGH, GPO_PUSH_PULL);
 }
 void Motor_SetSpeedleft(int16_t Speed)
-{
-		if(Speed > 8000)Speed= 8000;
-		if(Speed < -8000)Speed = -8000;  
-		if(Speed > 8000)Speed= 8000;
-		if(Speed < -8000)Speed = -8000;  
+{		
+		if(Speed > 0)Speed+= 4000;
+		if(Speed < 0)Speed -= 4000;  
+		if(Speed > 9000)Speed= 9000;
+		if(Speed < -9000)Speed = -9000;  
 		if (Speed >= 0)							//如果设置正转的速度值
 	{
 		gpio_set_level(C0, GPIO_HIGH);	//c0置高电平
@@ -33,11 +33,11 @@ void Motor_SetSpeedleft(int16_t Speed)
 	}
 }
 void Motor_SetSpeedright(int16_t Speed)
-{
-		if(Speed > 8000)Speed= 8000;
-		if(Speed < -8000)Speed = -8000;  
-		if(Speed > 8000)Speed= 8000;
-		if(Speed < -8000)Speed = -8000;  
+{	
+		if(Speed > 0)Speed+= 4000;
+		if(Speed < 0)Speed -= 4000; 
+		if(Speed > 9000)Speed= 9000;
+		if(Speed < -9000)Speed = -9000;  
 		if (Speed >= 0)							//如果设置正转的速度值
 	{
 		gpio_set_level(A2, GPIO_HIGH);	//c2置高电平

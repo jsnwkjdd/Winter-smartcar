@@ -2,6 +2,7 @@
 #include "zf_common_headfile.h"
 #include "menu.h"
 #include "pid.h"
+#include "flash.h"
 int32_t mode=0,hang=1,change=0;
 float kp=0.0;
 float ki=0.0;
@@ -83,9 +84,9 @@ void menu_key(void)
             }
             else
             {
-                if(hang==1) AnglePID.Ki+=0.1f;
-                else if(hang==2) AnglePID.Kd+=0.1f;
-                else if(hang==3) AnglePID.Kp+=0.1f;
+                if(hang==1) AnglePID.Ki+=0.01;
+                else if(hang==2) AnglePID.Kd+=0.05;
+                else if(hang==3) AnglePID.Kp+=0.05;
             }	
         }
     }
@@ -108,9 +109,9 @@ void menu_key(void)
             }
             else
             {
-                if(hang==1)  AnglePID.Ki-=0.1f;
-                else if(hang==2) AnglePID.Kd-=0.1f;
-                else if(hang==3) AnglePID.Kp-=0.1f;
+                if(hang==1)  AnglePID.Ki-=0.01;
+                else if(hang==2) AnglePID.Kd-=0.05;
+                else if(hang==3) AnglePID.Kp-=0.05;
             }	
         }
     }

@@ -3,9 +3,66 @@
 
 float gyro_x,gyro_y,gyro_z,acc_x,acc_y,acc_z;//数据处理中间量
 float AX,AY,AZ,GX,GY,GZ,AngleX,AngleY,AngleZ;//互补滤波中间量
-float AlphaX = 0.001,AlphaPitch = 0.01;//互补滤波参数
-float t=0.02;//t角速度积分，和定时中断同步
-int16_t acc_xbias=130,acc_ybias,acc_zbias,gyro_xbias,gyro_ybias,gyro_zbias;//零飘校准
+float AlphaX = 0.001,AlphaPitch = 0.02;//互补滤波参数
+float t=0.01;//t角速度积分，和定时中断同步
+int16_t acc_xbias,acc_ybias,acc_zbias,gyro_xbias,gyro_ybias,gyro_zbias,flag_mpu=0;//零飘校准
+
+
+/* 
+功能：读取mpu6050数据并进行Pitch姿态解算 Pitch+限幅滤波+互补滤波
+参数：储存解算好的Pitch,变量指针
+返回值：void
+*/
+void mpu6050estimation_Pitch(float*Pitch)
+{
+	mpu6050_get_acc(); //读取加速度计初始数据
+	mpu6050_get_gyro(); //读取角速度计初始数据 
+	
+	//数据预处理:去零飘+限幅滤波，坐标轴标定：
+	
+	mpu6050_acc_x-=170;//去零飘
+	mpu6050_acc_z-=0;
+	mpu6050_gyro_y-=-78;
+	
+	/*if(mpu6050_acc_x>-5&&mpu6050_acc_x<5)//限幅滤波
+	{
+		mpu6050_acc_x=0;
+	}
+	if(mpu6050_acc_z>-5&&mpu6050_acc_z<5)
+	{
+		mpu6050_acc_z=0;
+	}*/
+	/*if(mpu6050_gyro_y>-5&&mpu6050_gyro_y<5)
+	{
+		mpu6050_gyro_y=0;
+	}*/
+	
+							//坐标轴标定
+	
+	acc_x = mpu6050_acc_transition(mpu6050_acc_x); //加速度计转化为物理量 单位g
+	acc_z = mpu6050_acc_transition(mpu6050_acc_z);	
+	gyro_y = mpu6050_gyro_transition(mpu6050_gyro_y);//角速度计转化为物理量°/s
+	
+		
+	AY = -atan2(acc_x,acc_z)* 180.0f / 3.14159265f;//-? 得到加速度计算出的角度 °
+	GY = AngleY + gyro_y*t;		//得到角速度计算出的角度,t角速度积分，和定时中断同步
+	if(flag_mpu==0)
+	{
+		flag_mpu=1;
+		AngleY=AY;
+	}
+	else{
+	AngleY = AlphaPitch * AY + (1 - AlphaPitch) * GY;}//互补滤波
+	
+	
+	*Pitch=AngleY;//赋值给储存Pitch的变量
+	
+}
+
+
+
+
+
 
 
 /*	mpu6050_get_acc(); 
@@ -44,49 +101,6 @@ void fliter(float*a,float alpha)
 	sum=(*a)*alpha+(1-alpha)*last;//两次加权平均数
 	last=*a;//保留本次数据供下次使用
 	*a=sum;//输出滤波后数据
-}
-
-/* 
-功能：读取mpu6050数据并进行Pitch姿态解算 Pitch+限幅滤波+互补滤波
-参数：储存解算好的Pitch,变量指针
-返回值：void
-*/
-void mpu6050estimation_Pitch(float*Pitch)
-{
-	mpu6050_get_acc(); //读取加速度计初始数据
-	mpu6050_get_gyro(); //读取角速度计初始数据 
-	
-	//数据预处理:去零飘+限幅滤波，坐标轴标定：
-	
-	mpu6050_acc_x-=420;//去零飘
-	mpu6050_acc_z-=0;
-	mpu6050_gyro_y-=-78;
-	
-	/*if(mpu6050_acc_x>-5&&mpu6050_acc_x<5)//限幅滤波
-	{
-		mpu6050_acc_x=0;
-	}
-	if(mpu6050_acc_z>-5&&mpu6050_acc_z<5)
-	{
-		mpu6050_acc_z=0;
-	}*/
-	/*if(mpu6050_gyro_y>-5&&mpu6050_gyro_y<5)
-	{
-		mpu6050_gyro_y=0;
-	}*/
-	
-							//坐标轴标定
-	
-	acc_x = mpu6050_acc_transition(mpu6050_acc_x); //加速度计转化为物理量 单位g
-	acc_z = mpu6050_acc_transition(mpu6050_acc_z);	
-	gyro_y = mpu6050_gyro_transition(mpu6050_gyro_y);//角速度计转化为物理量°/s
-	
-		
-	AY = -atan2(acc_x,acc_z)* 180.0f / 3.14159265f;//-? 得到加速度计算出的角度 °
-	GY = AngleY + gyro_y*t;		//得到角速度计算出的角度,t角速度积分，和定时中断同步
-	AngleY = AlphaPitch * AY + (1 - AlphaPitch) * GY;//互补滤波
-	*Pitch=AngleY;//赋值给储存Pitch的变量
-	
 }
 
 
