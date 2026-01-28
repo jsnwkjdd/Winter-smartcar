@@ -1,12 +1,12 @@
 #include "key.h"
 #include "zf_common_headfile.h"
 #include "menu.h"
-
+#include "pid.h"
 int32_t mode=0,hang=1,change=0;
 float kp=0.0;
 float ki=0.0;
 float kd=0.0;
-
+extern PID_t AnglePID;
 //屏幕初始化函数
 void menu_init(void)
 {
@@ -32,9 +32,9 @@ void show(void)
 		tft180_show_string (0,0,hang==1?">ki":"ki");
 		tft180_show_string (0,10,hang==2?">kd":"kd");
 		tft180_show_string (0,20,hang==3?">kp":"kp");
-		tft180_show_float(40, 0, ki, 2,2);
-		tft180_show_float(40, 10, kd, 2,2);
-		tft180_show_float(40, 20, kp, 2,2);
+		tft180_show_float(40, 0, AnglePID.Ki, 2,2);
+		tft180_show_float(40, 10, AnglePID.Kd, 2,2);
+		tft180_show_float(40, 20, AnglePID.Kp, 2,2);
 		tft180_show_string (100,0,change==1?"yes":"no");
 	}else if(mode==2)
 	{
@@ -83,9 +83,9 @@ void menu_key(void)
             }
             else
             {
-                if(hang==1) ki+=0.1f;
-                else if(hang==2) kd+=0.1f;
-                else if(hang==3) kp+=0.1f;
+                if(hang==1) AnglePID.Ki+=0.1f;
+                else if(hang==2) AnglePID.Kd+=0.1f;
+                else if(hang==3) AnglePID.Kp+=0.1f;
             }	
         }
     }
@@ -108,9 +108,9 @@ void menu_key(void)
             }
             else
             {
-                if(hang==1) ki-=0.1f;
-                else if(hang==2) kd-=0.1f;
-                else if(hang==3) kp-=0.1f;
+                if(hang==1)  AnglePID.Ki-=0.1f;
+                else if(hang==2) AnglePID.Kd-=0.1f;
+                else if(hang==3) AnglePID.Kp-=0.1f;
             }	
         }
     }
