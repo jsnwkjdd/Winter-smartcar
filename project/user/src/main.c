@@ -55,12 +55,13 @@ int encoderleft=0;
 int encoderright=0;
 int16_t LeftPWM, RightPWM;
 int16_t AvePWM, DifPWM;
+float leftspeed,rightspeed;
+float avespeed,difspeed;
 extern float AngleY;
 PID_t AnglePID = {
 	.Kp = 1,
 	.Ki = 0,
 	.Kd = 0,
-	.Target=0,
 	.OutMax = 100,
 	.OutMin = -100,
 };
@@ -68,6 +69,7 @@ PID_t SpeedPID = {
 	.Kp = 1,
 	.Ki = 0,
 	.Kd = 0,
+	.Target=0,
 	.OutMax = 20,
 	.OutMin = -20,
 };
@@ -85,6 +87,8 @@ int main(void)
 	menu_init();
 	menu_load();
 	PID_Init(&AnglePID);
+	PID_Init(&SpeedPID);
+	Encoder_Init();
 //	Motor_SetSpeedleft(0);
 //	Motor_SetSpeedright(0);
 	// 设置 PIT 对周期中断的中断优先级为 0
@@ -118,6 +122,7 @@ void pit_handler (void)
 	
 	cnt++;
 	cnt1++;
+	cnt2++;
 	if(cnt==10)
 	{
 		mpu6050estimation_Pitch(&Pitch);  
@@ -136,16 +141,26 @@ void pit_handler (void)
 		Motor_SetSpeedright(RightPWM*350);
 		cnt1=0;
 	}
-	/*
-    encoderleft = Get_Encoder_Data_Left();              // 获取编码器计数（并非标准单位）
-    encoderright = Get_Encoder_Data_Right();            // 获取编码器计数（并非标准单位）
+
+	if(cnt2>=20)
+	{
+//		encoderleft = Get_Encoder_Data_Left();              // 获取编码器计数（并非标准单位）
+//		encoderright = Get_Encoder_Data_Right();            // 获取编码器计数（并非标准单位）
+			
+		//			如要获得转/秒，请用此公式
+				leftspeed = Get_Encoder_Data_Left()/52/0.01/34;		//公式：编码器值/一圈计数值/减速比/周期（单位：转/秒）  
+				rightspeed = Get_Encoder_Data_Right()/52/0.01/34;	
 		
-			如要获得转/秒，请用此公式
-			encoderleft = Get_Encoder_Data_Left()/52/0.01/34;		//公式：编码器值/一圈计数值/减速比/周期（单位：转/秒）  
-			encoderright = Get_Encoder_Data_Right()/52/0.01/34;	
-	
-    encoder_clear_count(ENCODER_QUADDEC_L);                                       // 清空编码器计数
-    encoder_clear_count(ENCODER_QUADDEC_R); 
-*/
-// 清空编码器计数
+		avespeed=(leftspeed+rightspeed)/2.0;
+		difspeed=leftspeed-rightspeed;
+		
+		SpeedPID.Actual=avespeed;
+		PID_Update(&SpeedPID);
+		AnglePID.Target=SpeedPID.Out;
+		
+		encoder_clear_count(ENCODER_QUADDEC_L);                                       // 清空编码器计数
+		encoder_clear_count(ENCODER_QUADDEC_R); 
+
+		// 清空编码器计数
+	}
 }
