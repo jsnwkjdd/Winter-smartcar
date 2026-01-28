@@ -62,16 +62,16 @@ PID_t AnglePID = {
 	.Kp = 1,
 	.Ki = 0,
 	.Kd = 0,
+	.Target=0,
 	.OutMax = 100,
 	.OutMin = -100,
 };
 PID_t SpeedPID = {
-	.Kp = 1,
-	.Ki = 0,
-	.Kd = 0,
-	.Target=0,
-	.OutMax = 20,
-	.OutMin = -20,
+	.Kp = 100,
+	.Ki = 10,
+	.Kd = 1,
+	.OutMax = 80,
+	.OutMin = -80,
 };
 // **************************** 代码区域 ****************************
 int main(void)
@@ -88,6 +88,7 @@ int main(void)
 	menu_load();
 	PID_Init(&AnglePID);
 	PID_Init(&SpeedPID);
+	SpeedPID.Target=0.5;
 	Encoder_Init();
 //	Motor_SetSpeedleft(0);
 //	Motor_SetSpeedright(0);
@@ -103,6 +104,10 @@ int main(void)
 		menu_key();
 		menu_save();
 			tft180_show_int(0, 110,-Pitch-2 , 3);
+		tft180_show_int(0, 120,avespeed , 3);
+		tft180_show_int(0, 130,SpeedPID.Out , 3);
+		tft180_show_int(0, 140,SpeedPID.Actual , 3);
+		tft180_show_int(0, 150,SpeedPID.Target*10 , 3);
 		//tft180_show_int(0, 30,acc_z , 3); 
         // 此处编写需要循环执行的代码
 //			Motor_SetSpeedright(7000);
@@ -128,19 +133,19 @@ void pit_handler (void)
 		mpu6050estimation_Pitch(&Pitch);  
 		cnt=0;
 	}
-	if(cnt1==20){
-	  printf("[plot,%f\r\n]",AngleY);
-		AnglePID.Actual = -Pitch-2;
-		PID_Update(&AnglePID);
-		AvePWM = -AnglePID.Out;
-		LeftPWM = AvePWM;
-		RightPWM = AvePWM;
-		if (LeftPWM > 100) {LeftPWM = 100;} else if (LeftPWM < -100) {LeftPWM = -100;}
-		if (RightPWM > 100) {RightPWM = 100;} else if (RightPWM < -100) {RightPWM = -100;}
-		Motor_SetSpeedleft(LeftPWM*350);
-		Motor_SetSpeedright(RightPWM*350);
-		cnt1=0;
-	}
+//	if(cnt1==20){
+//	  printf("[plot,%f\r\n]",AngleY);
+//		AnglePID.Actual = -Pitch-2;
+//		PID_Update(&AnglePID);
+//		AvePWM = -AnglePID.Out;
+//		LeftPWM = AvePWM;
+//		RightPWM = AvePWM;
+//		if (LeftPWM > 100) {LeftPWM = 100;} else if (LeftPWM < -100) {LeftPWM = -100;}
+//		if (RightPWM > 100) {RightPWM = 100;} else if (RightPWM < -100) {RightPWM = -100;}
+//		Motor_SetSpeedleft(LeftPWM*350);
+//		Motor_SetSpeedright(RightPWM*350);
+//		cnt1=0;
+//	}
 
 	if(cnt2>=20)
 	{
@@ -148,19 +153,26 @@ void pit_handler (void)
 //		encoderright = Get_Encoder_Data_Right();            // 获取编码器计数（并非标准单位）
 			
 		//			如要获得转/秒，请用此公式
-				leftspeed = Get_Encoder_Data_Left()/52/0.01/34;		//公式：编码器值/一圈计数值/减速比/周期（单位：转/秒）  
-				rightspeed = Get_Encoder_Data_Right()/52/0.01/34;	
+				leftspeed = Get_Encoder_Data_Left()/52/0.02/34;		//公式：编码器值/一圈计数值/减速比/周期（单位：转/秒）  
+				rightspeed = Get_Encoder_Data_Right()/52/0.02/34;	
 		
 		avespeed=(leftspeed+rightspeed)/2.0;
 		difspeed=leftspeed-rightspeed;
 		
 		SpeedPID.Actual=avespeed;
 		PID_Update(&SpeedPID);
-		AnglePID.Target=SpeedPID.Out;
+		AvePWM = -SpeedPID.Out;
+		LeftPWM = AvePWM;
+		RightPWM = AvePWM;
+		if (LeftPWM > 100) {LeftPWM = 100;} else if (LeftPWM < -100) {LeftPWM = -100;}
+		if (RightPWM > 100) {RightPWM = 100;} else if (RightPWM < -100) {RightPWM = -100;}
+		Motor_SetSpeedleft(LeftPWM*350);
+		Motor_SetSpeedright(RightPWM*350);
 		
 		encoder_clear_count(ENCODER_QUADDEC_L);                                       // 清空编码器计数
 		encoder_clear_count(ENCODER_QUADDEC_R); 
 
+		cnt2=0;
 		// 清空编码器计数
 	}
 }
