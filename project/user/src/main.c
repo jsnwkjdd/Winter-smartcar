@@ -87,6 +87,7 @@ int main(void)
 	menu_load();
 	PID_Init(&AnglePID);
 	PID_Init(&SpeedPID);
+	bluetooth_ch9141_init();
 //	Motor_SetSpeedleft(0);
 //	Motor_SetSpeedright(0);
 	// 设置 PIT 对周期中断的中断优先级为 0
@@ -100,7 +101,8 @@ int main(void)
 		menu_save();
 		menu_key();
 		menu_save();
-			tft180_show_int(0, 110,-Pitch-2 , 3);
+			//tft180_show_int(0, 110,-Pitch-2 , 3);
+		printf("[plot,%f]",Pitch);
 		//tft180_show_int(0, 30,acc_z , 3); 
         // 此处编写需要循环执行的代码
 //			Motor_SetSpeedright(7000);

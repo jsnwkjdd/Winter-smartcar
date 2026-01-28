@@ -329,14 +329,14 @@ GETCHAR_PROTOTYPE
 #else
 /*
 此处注释掉了，printf重定向用于蓝牙，如需调试，去掉此处注释，并注释掉bluetooth.c中的重定向*/
-int32_t fputc (int32_t ch, FILE* f)
-{
-    if(zf_debug_init_flag)
-    {
-        uart_write_byte(DEBUG_UART_INDEX, (ch & 0xFF));
-    }
-    return ch;
-}
+//int32_t fputc (int32_t ch, FILE* f)
+//{
+//    if(zf_debug_init_flag)
+//    {
+//        uart_write_byte(DEBUG_UART_INDEX, (ch & 0xFF));
+//    }
+//    return ch;
+//}
 
 int fgetc(FILE *f)
 {
