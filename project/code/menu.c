@@ -37,12 +37,12 @@ void show(void)
 		tft180_show_string (0,30,hang==4?">ki2":"ki2");
 		tft180_show_string (0,40,hang==5?">kd2":"kd2");
 		tft180_show_string (0,50,hang==6?">kp2":"kp2");
-		tft180_show_float(40, 0, AnglePID.Ki, 2,2);
-		tft180_show_float(40, 10, AnglePID.Kd, 2,2);
-		tft180_show_float(40, 20, AnglePID.Kp, 2,2);
-		tft180_show_float(40, 30, SpeedPID.Ki, 2,2);
-		tft180_show_float(40, 40, SpeedPID.Kd, 2,2);
-		tft180_show_float(40, 50, SpeedPID.Kp, 2,2);
+		tft180_show_float(40, 0, AnglePID.Ki, 3,3);
+		tft180_show_float(40, 10, AnglePID.Kd, 3,3);
+		tft180_show_float(40, 20, AnglePID.Kp, 3,3);
+		tft180_show_float(40, 30, SpeedPID.Ki, 3,3);
+		tft180_show_float(40, 40, SpeedPID.Kd, 3,3);
+		tft180_show_float(40, 50, SpeedPID.Kp, 3,3);
 		tft180_show_string (100,0,change==1?"yes":"no");
 	}else if(mode==2)
 	{

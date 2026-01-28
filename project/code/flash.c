@@ -60,7 +60,6 @@ void menu_load(void)
     flash_read_page_to_buffer(FLASH_SECTION_INDEX, FLASH_PAGE_INDEX); 
     AnglePID.Ki=flash_union_buffer[0].float_type;
     AnglePID.Kd=flash_union_buffer[1].float_type;
-
     AnglePID.Kp=flash_union_buffer[2].float_type;
 //    =flash_union_buffer[3].float_type;
 

@@ -64,6 +64,13 @@ PID_t AnglePID = {
 	.OutMax = 100,
 	.OutMin = -100,
 };
+PID_t SpeedPID = {
+	.Kp = 1,
+	.Ki = 0,
+	.Kd = 0,
+	.OutMax = 20,
+	.OutMin = -20,
+};
 // **************************** 代码区域 ****************************
 int main(void)
 {
@@ -76,10 +83,10 @@ int main(void)
 	my_key_init();
 	timer_key();
 	menu_init();
-//	menu_load();
+	menu_load();
 	PID_Init(&AnglePID);
-			Motor_SetSpeedleft(0);
-		Motor_SetSpeedright(0);
+//	Motor_SetSpeedleft(0);
+//	Motor_SetSpeedright(0);
 	// 设置 PIT 对周期中断的中断优先级为 0
     // 此处编写用户代码 例如外设初始化代码等
 //    	Motor_SetSpeedright(7000);
@@ -88,8 +95,9 @@ int main(void)
     while(1)
     {
 		//printf("%f\n",Pitch);
+		menu_save();
 		menu_key();
-//		menu_save();
+		menu_save();
 			tft180_show_int(0, 110,-Pitch-2 , 3);
 		//tft180_show_int(0, 30,acc_z , 3); 
         // 此处编写需要循环执行的代码
