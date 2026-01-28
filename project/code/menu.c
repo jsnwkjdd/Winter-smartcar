@@ -9,6 +9,7 @@ float ki=0.0;
 float kd=0.0;
 extern PID_t AnglePID;
 extern PID_t SpeedPID;
+uint8_t start;
 //屏幕初始化函数
 void menu_init(void)
 {
@@ -37,12 +38,14 @@ void show(void)
 		tft180_show_string (0,30,hang==4?">ki2":"ki2");
 		tft180_show_string (0,40,hang==5?">kd2":"kd2");
 		tft180_show_string (0,50,hang==6?">kp2":"kp2");
+		tft180_show_string (0,60,hang==7?">start":"start");
 		tft180_show_float(40, 0, AnglePID.Ki, 3,3);
 		tft180_show_float(40, 10, AnglePID.Kd, 3,3);
 		tft180_show_float(40, 20, AnglePID.Kp, 3,3);
 		tft180_show_float(40, 30, SpeedPID.Ki, 3,3);
 		tft180_show_float(40, 40, SpeedPID.Kd, 3,3);
 		tft180_show_float(40, 50, SpeedPID.Kp, 3,3);
+		tft180_show_uint(0, 0, start, 1);
 		tft180_show_string (100,0,change==1?"yes":"no");
 	}else if(mode==2)
 	{
@@ -140,7 +143,11 @@ void menu_key(void)
         }
         else if(mode==1)
         {
-            if(change==0) change=1;
+			if(hang==7)
+			{
+				if(start==0)start=1;
+			}
+            else if(change==0) change=1;
         }
     }
     // KEY_4：退出/返回
@@ -152,8 +159,12 @@ void menu_key(void)
         {
             if(mode!=0)
             {
+				if(start==0)
+				{
                 mode=0;
                 hang=1;
+				}
+				else start=0;
             }
         }
         else if(change==1)
