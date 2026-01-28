@@ -24,7 +24,7 @@ void key_scan(void)
 //获取按键状态
 key_state_enum key_getstate (key_index_enum key_n)
 {
-key_get_state(key_n);
+   return key_get_state(key_n);
 }
 
 //清除对应按键状态

@@ -17,6 +17,8 @@ void Motor_SetSpeedleft(int16_t Speed)
 {
 		if(Speed > 8000)Speed= 8000;
 		if(Speed < -8000)Speed = -8000;  
+		if(Speed > 8000)Speed= 8000;
+		if(Speed < -8000)Speed = -8000;  
 		if (Speed >= 0)							//如果设置正转的速度值
 	{
 		gpio_set_level(C0, GPIO_HIGH);	//c0置高电平
@@ -24,7 +26,7 @@ void Motor_SetSpeedleft(int16_t Speed)
 		pwm_set_duty(TIM5_PWM_CH2_A1, Speed); 				//PWM设置为速度值
 	}
 	else									//否则，即设置反转的速度值
-	{
+	{Speed=-Speed;
 		gpio_set_level(C1, GPIO_HIGH);	//c1置高电平
 		gpio_set_level(C0, GPIO_LOW);		//c0置低电平，设置方向为反转
 		pwm_set_duty(TIM5_PWM_CH2_A1, -Speed);			//PWM设置为负的速度值，因为此时速度值为负数，而PWM只能给正数
@@ -32,6 +34,8 @@ void Motor_SetSpeedleft(int16_t Speed)
 }
 void Motor_SetSpeedright(int16_t Speed)
 {
+		if(Speed > 8000)Speed= 8000;
+		if(Speed < -8000)Speed = -8000;  
 		if(Speed > 8000)Speed= 8000;
 		if(Speed < -8000)Speed = -8000;  
 		if (Speed >= 0)							//如果设置正转的速度值

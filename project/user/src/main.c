@@ -55,11 +55,10 @@ int encoderright=0;
 int16_t LeftPWM, RightPWM;
 int16_t AvePWM, DifPWM;
 extern float AngleY;
-int a=0;
 PID_t AnglePID = {
 	.Kp = 1,
 	.Ki = 0,
-	.Kd = 1,
+	.Kd = 0,
 	.Target=0,
 	.OutMax = 100,
 	.OutMin = -100,
@@ -67,16 +66,18 @@ PID_t AnglePID = {
 // **************************** 代码区域 ****************************
 int main(void)
 {
-  clock_init(SYSTEM_CLOCK_120M);                                              // 初始化芯片时钟 工作频率为 120MHz
-  debug_init();                                                               // 初始化默认 Debug UART
+    clock_init(SYSTEM_CLOCK_120M);                                              // 初始化芯片时钟 工作频率为 120MHz
+    debug_init();                                                               // 初始化默认 Debug UART
 	pit_ms_init(PIT, 1);                                                      // 初始化 PIT（TIM6_PIT） 为周期中断 1ms 周期
-	my_key_init();
-	timer_key();
 	interrupt_set_priority(PIT_PRIORITY, 0);
 	Motor_Init();
 	mpu6050_init();
+	my_key_init();
+	timer_key();
 	menu_init();
 	PID_Init(&AnglePID);
+			Motor_SetSpeedleft(0);
+		Motor_SetSpeedright(0);
 	// 设置 PIT 对周期中断的中断优先级为 0
     // 此处编写用户代码 例如外设初始化代码等
 //    	Motor_SetSpeedright(7000);
@@ -85,12 +86,12 @@ int main(void)
     while(1)
     {
 		//printf("%f\n",Pitch);
-			menu_key();
-			tft180_show_int(0, 100,a , 3); 
+		menu_key();
+			tft180_show_int(0, 110,Pitch , 3);   
 		//tft180_show_int(0, 30,acc_z , 3); 
         // 此处编写需要循环执行的代码
-			Motor_SetSpeedleft(-7000);
-			Motor_SetSpeedright(-7000);
+//			Motor_SetSpeedright(7000);
+//			Motor_SetSpeedleft(7000);
         // 此处编写需要循环执行的代码
     }
 }
@@ -105,12 +106,12 @@ void pit_handler (void)
 	
 	cnt++;
 	cnt1++;
-	if(cnt==10)
+	if(cnt==20)
 	{
 		mpu6050estimation_Pitch(&Pitch);  
 		cnt=0;
 	}
-	if(cnt1==20){
+	if(cnt1==30){
 		mpu6050estimation_Pitch(&Pitch);
 	  printf("[plot,%f\r\n]",AngleY);
 		AnglePID.Actual = -Pitch;
@@ -123,8 +124,7 @@ void pit_handler (void)
 		Motor_SetSpeedleft(LeftPWM*320);
 		Motor_SetSpeedright(RightPWM*320);
 		cnt1=0;
-	}
-/*
+	}/*
     encoderleft = Get_Encoder_Data_Left();              // 获取编码器计数（并非标准单位）
     encoderright = Get_Encoder_Data_Right();            // 获取编码器计数（并非标准单位）
 		
@@ -135,4 +135,5 @@ void pit_handler (void)
     encoder_clear_count(ENCODER_QUADDEC_L);                                       // 清空编码器计数
     encoder_clear_count(ENCODER_QUADDEC_R); 
 */
+// 清空编码器计数
 }
