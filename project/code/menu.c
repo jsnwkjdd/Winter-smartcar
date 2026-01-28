@@ -8,6 +8,7 @@ float kp=0.0;
 float ki=0.0;
 float kd=0.0;
 extern PID_t AnglePID;
+extern PID_t SpeedPID;
 //屏幕初始化函数
 void menu_init(void)
 {
@@ -30,12 +31,18 @@ void show(void)
 		tft180_show_string (0,40,hang==5?">mode5":"mode5");
 	}else if(mode==1)
 	{
-		tft180_show_string (0,0,hang==1?">ki":"ki");
-		tft180_show_string (0,10,hang==2?">kd":"kd");
-		tft180_show_string (0,20,hang==3?">kp":"kp");
+		tft180_show_string (0,0,hang==1?">ki1":"ki1");
+		tft180_show_string (0,10,hang==2?">kd1":"kd1");
+		tft180_show_string (0,20,hang==3?">kp1":"kp1");
+		tft180_show_string (0,30,hang==4?">ki2":"ki2");
+		tft180_show_string (0,40,hang==5?">kd2":"kd2");
+		tft180_show_string (0,50,hang==6?">kp2":"kp2");
 		tft180_show_float(40, 0, AnglePID.Ki, 2,2);
 		tft180_show_float(40, 10, AnglePID.Kd, 2,2);
 		tft180_show_float(40, 20, AnglePID.Kp, 2,2);
+		tft180_show_float(40, 30, SpeedPID.Ki, 2,2);
+		tft180_show_float(40, 40, SpeedPID.Kd, 2,2);
+		tft180_show_float(40, 50, SpeedPID.Kp, 2,2);
 		tft180_show_string (100,0,change==1?"yes":"no");
 	}else if(mode==2)
 	{
@@ -79,7 +86,7 @@ void menu_key(void)
         {
             if(change==0)
             {
-                if(hang==3) hang=1;
+                if(hang==6) hang=1;
                 else hang=hang+1;
             }
             else
@@ -87,6 +94,9 @@ void menu_key(void)
                 if(hang==1) AnglePID.Ki+=0.01;
                 else if(hang==2) AnglePID.Kd+=0.05;
                 else if(hang==3) AnglePID.Kp+=0.05;
+				else if(hang==4) SpeedPID.Ki+=0.01;
+                else if(hang==5) SpeedPID.Kd+=0.05;
+                else if(hang==6) SpeedPID.Kp+=0.05;
             }	
         }
     }
@@ -104,7 +114,7 @@ void menu_key(void)
         {
             if(change==0)
             {
-                if(hang==1) hang=3;
+                if(hang==1) hang=6;
                 else hang=hang-1;
             }
             else
@@ -112,6 +122,9 @@ void menu_key(void)
                 if(hang==1)  AnglePID.Ki-=0.01;
                 else if(hang==2) AnglePID.Kd-=0.05;
                 else if(hang==3) AnglePID.Kp-=0.05;
+				else if(hang==4) SpeedPID.Ki+=0.01;
+                else if(hang==5) SpeedPID.Kd+=0.05;
+                else if(hang==6) SpeedPID.Kp+=0.05;
             }	
         }
     }
