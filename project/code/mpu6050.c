@@ -3,11 +3,13 @@
 
 float gyro_x,gyro_y,gyro_z,acc_x,acc_y,acc_z;//数据处理中间量
 float AX,AY,AZ,GX,GY,GZ,AngleX,AngleY,AngleZ;//互补滤波中间量
-float AlphaX = 0.001,AlphaPitch = 0.04;//互补滤波参数
+float AlphaX = 0.001,AlphaPitch = 0.075;//互补滤波参数
 float t=0.01;//t角速度积分，和定时中断同步
 int16_t acc_xbias,acc_ybias,acc_zbias,gyro_xbias,gyro_ybias,gyro_zbias,flag_mpu=0;//零飘校准
 
-
+void filterax(float*a,float alpha);
+void filteraz(float* a, float alpha);
+void filtergy(float* a, float alpha);
 /* 
 功能：读取mpu6050数据并进行Pitch姿态解算 Pitch+限幅滤波+互补滤波
 参数：储存解算好的Pitch,变量指针
@@ -42,7 +44,9 @@ void mpu6050estimation_Pitch(float*Pitch)
 	acc_x = mpu6050_acc_transition(mpu6050_acc_x); //加速度计转化为物理量 单位g
 	acc_z = mpu6050_acc_transition(mpu6050_acc_z);	
 	gyro_y = mpu6050_gyro_transition(mpu6050_gyro_y);//角速度计转化为物理量°/s
-	
+	filterax(&acc_x,0.9);
+	filteraz(&acc_z,0.9);
+	filtergy(&gyro_y,0.9);
 		
 	AY = -atan2(acc_x,acc_z)* 180.0f / 3.14159265f;//-? 得到加速度计算出的角度 °
 	GY = AngleY + gyro_y*t;		//得到角速度计算出的角度,t角速度积分，和定时中断同步
@@ -94,15 +98,53 @@ void mpu6050estimation_Pitch(float*Pitch)
 	参数：需滤波变量地址,一阶低通滤波参数
 
 */
-void fliter(float*a,float alpha)
+void filterax(float* a, float alpha)
 {
-	static int last;
-	int sum;
-	sum=(*a)*alpha+(1-alpha)*last;//两次加权平均数
-	last=*a;//保留本次数据供下次使用
-	*a=sum;//输出滤波后数据
+    static float last = 0.0f;
+    static int initialized = 0;
+    
+    if (!initialized) {
+        last = *a;
+        initialized = 1;
+    }
+    
+    // 一阶低通滤波：y[n] = α*x[n] + (1-α)*y[n-1]
+    float result = alpha * (*a) + (1.0f - alpha) * last;
+    last = result;
+    *a = result;
 }
 
+void filteraz(float* a, float alpha)
+{
+    static float last = 0.0f;
+    static int initialized = 0;
+    
+    if (!initialized) {
+        last = *a;
+        initialized = 1;
+    }
+    
+    // 一阶低通滤波：y[n] = α*x[n] + (1-α)*y[n-1]
+    float result = alpha * (*a) + (1.0f - alpha) * last;
+    last = result;
+    *a = result;
+}
+
+void filtergy(float* a, float alpha)
+{
+    static float last = 0.0f;
+    static int initialized = 0;
+    
+    if (!initialized) {
+        last = *a;
+        initialized = 1;
+    }
+    
+    // 一阶低通滤波：y[n] = α*x[n] + (1-α)*y[n-1]
+    float result = alpha * (*a) + (1.0f - alpha) * last;
+    last = result;
+    *a = result;
+}
 
 /* 
 功能：读取mpu6050数据并进行Pitch姿态解算2 Pitch+限幅滤波+互补滤波，Kp版
@@ -198,12 +240,12 @@ void mpu6050estimation(float*Pitch,float*Roll,float*Yaw)
 	gyro_z=(float)mpu6050_gyro_z;
 	
 	//数据预处理:滤波，去零飘，坐标轴标定：
-	fliter(&acc_x,0.8);
-	fliter(&acc_y,0.8);
-	fliter(&acc_z,0.8);
-	fliter(&gyro_x,0.8);
-	fliter(&gyro_y,0.8);
-	fliter(&gyro_z,0.8);
+//	fliter(&acc_x,0.8);
+//	fliter(&acc_y,0.8);
+//	fliter(&acc_z,0.8);
+//	fliter(&gyro_x,0.8);
+//	fliter(&gyro_y,0.8);
+//	fliter(&gyro_z,0.8);
 	
 	acc_x = mpu6050_acc_transition(mpu6050_acc_x); //三轴加速度计转化为物理量
 	acc_y = mpu6050_acc_transition(mpu6050_acc_y);
@@ -284,4 +326,3 @@ void sum(int16_t*sacc_x,int16_t*sacc_y,int16_t*sacc_z,int16_t*sgyro_x,int16_t*sg
 	}
 	printf("OK");
 }
-

@@ -61,8 +61,8 @@ void menu_load(void)
     AnglePID.Ki=flash_union_buffer[0].float_type;
     AnglePID.Kd=flash_union_buffer[1].float_type;
     AnglePID.Kp=flash_union_buffer[2].float_type;
-    SpeedPID.Ki=flash_union_buffer[3].float_type;
-    SpeedPID.Kp=flash_union_buffer[4].float_type;
+    SpeedPID.Kp=flash_union_buffer[3].float_type;
+    SpeedPID.Ki=flash_union_buffer[4].float_type;
     SpeedPID.Kd=flash_union_buffer[5].float_type;
 
 //    =flash_union_buffer[6].float_type;

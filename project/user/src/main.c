@@ -79,12 +79,14 @@ int main(void)
     debug_init();                                                               // 初始化默认 Debug UART
 	pit_ms_init(PIT, 1);                                                      // 初始化 PIT（TIM6_PIT） 为周期中断 1ms 周期
 	interrupt_set_priority(PIT_PRIORITY, 0);
+	bluetooth_ch9141_init();
 	Motor_Init();
 	mpu6050_init();
 	my_key_init();
 	timer_key();
 	menu_init();
 	menu_load();
+	Pitch=0;
 	PID_Init(&AnglePID);
 	PID_Init(&SpeedPID);
 //	Motor_SetSpeedleft(0);
@@ -100,11 +102,12 @@ int main(void)
 		menu_save();
 		menu_key();
 		menu_save();
-			tft180_show_int(0, 110,-Pitch-2 , 3);
+//		printf("[plot,%f]",-Pitch-2);
+		tft180_show_int(0, 110,-Pitch-2 , 3);
 		//tft180_show_int(0, 30,acc_z , 3); 
         // 此处编写需要循环执行的代码
-//			Motor_SetSpeedright(7000);
-//			Motor_SetSpeedleft(7000);
+//		Motor_SetSpeedright(1000);
+//		Motor_SetSpeedleft(1000);
         // 此处编写需要循环执行的代码
     }
 }
@@ -134,8 +137,8 @@ void pit_handler (void)
 		RightPWM = AvePWM;
 		if (LeftPWM > 100) {LeftPWM = 100;} else if (LeftPWM < -100) {LeftPWM = -100;}
 		if (RightPWM > 100) {RightPWM = 100;} else if (RightPWM < -100) {RightPWM = -100;}
-		Motor_SetSpeedleft(LeftPWM*350);
-		Motor_SetSpeedright(RightPWM*350);
+		Motor_SetSpeedleft(LeftPWM*100);
+		Motor_SetSpeedright(RightPWM*100);
 		cnt1=0;
 	}
 	if(cnt2==50)
