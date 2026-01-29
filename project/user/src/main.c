@@ -89,6 +89,7 @@ int main(void)
 	Pitch=0;
 	PID_Init(&AnglePID);
 	PID_Init(&SpeedPID);
+	bluetooth_ch9141_init();
 //	Motor_SetSpeedleft(0);
 //	Motor_SetSpeedright(0);
 	// 设置 PIT 对周期中断的中断优先级为 0
