@@ -519,6 +519,16 @@
               <FileType>5</FileType>
               <FilePath>..\code\mpu6050.h</FilePath>
             </File>
+            <File>
+              <FileName>mode5.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\mode5.c</FilePath>
+            </File>
+            <File>
+              <FileName>mode5.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\code\mode5.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

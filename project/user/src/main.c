@@ -44,6 +44,7 @@
 #include "key.h"
 #include "flash.h"
 #include <stdint.h>
+#include "mode5.h"
 
 extern int16_t acc_xbias,acc_ybias,acc_zbias,gyro_xbias,gyro_ybias,gyro_zbias;//零飘校准
 extern float gyro_x,gyro_y,gyro_z,acc_x,acc_y,acc_z;//数据处理中间量
@@ -57,7 +58,7 @@ int16_t f=1;
 // 本例程是开源库移植用空工程
 float LeftSpeed,RightSpeed;
 int16_t LeftPWM, RightPWM;
-int16_t AvePWM, DifPWM;
+int16_t AvePWM, DifPWM=0;
 int16_t AveSpeed, DifSpeed;
 extern float AngleY;
 PID_t AnglePID = {
@@ -75,6 +76,13 @@ PID_t SpeedPID = {
 	.OutMax = 20,
 	.OutMin = -20,
 	.Target=0,
+};
+PID_t TurnPID = {
+	.Kp = 0,
+	.Ki = 0,
+	.Kd = 0,
+	.OutMax = 50,
+	.OutMin = -50,
 };
 // **************************** 代码区域 ****************************
 int main(void)
@@ -94,6 +102,7 @@ int main(void)
 	Encoder_Init();
 	PID_Init(&AnglePID);
 	PID_Init(&SpeedPID);
+	PID_Init(&TurnPID);
 	bluetooth_ch9141_init();
 //	Motor_SetSpeedleft(0);
 //	Motor_SetSpeedright(0);
@@ -115,7 +124,9 @@ int main(void)
 		tft180_show_float(0, 150,encoderright, 3,2);
 		tft180_show_float(0, 100,mpu6050_gyro_y , 2,2); 
 		tft180_show_float(0, 110,mpu6050_acc_x , 2,2); 
-			tft180_show_float(0, 120,mpu6050_acc_z , 2,2); 
+		tft180_show_float(0, 120,mpu6050_acc_z , 2,2);
+
+		mode5(&SpeedPID,&TurnPID);
         // 此处编写需要循环执行的代码
 //		Motor_SetSpeedright(1000);
 //		Motor_SetSpeedleft(1000);
@@ -146,15 +157,15 @@ void pit_handler (void)
 		AnglePID.Actual = -Pitch;			//角度环pid
 		PID_Update(&AnglePID);
 		AvePWM = -AnglePID.Out;
-		LeftPWM = AvePWM;
-		RightPWM = AvePWM;
+		LeftPWM = AvePWM+DifPWM/2;
+		RightPWM = AvePWM-DifPWM/2;
 		if (LeftPWM > 100) {LeftPWM = 100;} else if (LeftPWM < -100) {LeftPWM = -100;}
 		if (RightPWM > 100) {RightPWM = 100;} else if (RightPWM < -100) {RightPWM = -100;}
 		Motor_SetSpeedleft(LeftPWM*100);
 		Motor_SetSpeedright(RightPWM*100);
 		cnt1=0;
 	}
-	if(cnt2==50)//速度环pid
+	if(cnt2==50)//速度环pid && 角度环pid
 	{
 		cnt2=0;
 		LeftSpeed = Get_Encoder_Data_Left()/13.0/34/0.05;	//公式：编码器值/一圈计数值/减速比/周期（单位：转/秒）  
@@ -165,11 +176,14 @@ void pit_handler (void)
 		PID_Update(&SpeedPID);
 		AnglePID.Target=SpeedPID.Out;
 		
+		TurnPID.Actual=DifSpeed;
+		PID_Update(&TurnPID);
+		DifPWM=TurnPID.Out;
 	}	
 //公式：编码器值/一圈计数值/减速比/周期（单位：转/秒）  
 	if(cnt3==50){
-   encoder_clear_count(ENCODER_QUADDEC_L);                                       // 清空编码器计数
-   encoder_clear_count(ENCODER_QUADDEC_R);
+	    encoder_clear_count(ENCODER_QUADDEC_L);                                       // 清空编码器计数
+	    encoder_clear_count(ENCODER_QUADDEC_R);
 		cnt3=0;		
 	}
 // 清空编码器计数
