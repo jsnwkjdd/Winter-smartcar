@@ -55,11 +55,11 @@ void mode5(PID_t *p1,PID_t *p2)
 			p2->Target=0.5;
 		}
 		else if(buffer[0]==70){
-			p1->Target=-1.25;
+			p1->Target=-1.3;
 			p2->Target=0.5;
 		}
 		else if(buffer[0]==68){
-			p1->Target=-1.25;
+			p1->Target=-1.3;
 			p2->Target=-0.5;
 		}
 	}
