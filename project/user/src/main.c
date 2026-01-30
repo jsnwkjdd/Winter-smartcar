@@ -39,12 +39,16 @@
 #include "mpu6050.h"
 #include "pid.h"
 #include "motor.h"
+#include "Encoder.h"
 #include "menu.h"
 #include "key.h"
 #include "flash.h"
+#include <stdint.h>
+
 extern int16_t acc_xbias,acc_ybias,acc_zbias,gyro_xbias,gyro_ybias,gyro_zbias;//零飘校准
 extern float gyro_x,gyro_y,gyro_z,acc_x,acc_y,acc_z;//数据处理中间量
 float Pitch;
+int32_t encoderleft,encoderright;
 int16_t f=1;
 // 打开新的工程或者工程移动了位置务必执行以下操作
 // 第一步 关闭上面所有打开的文件
@@ -65,7 +69,7 @@ PID_t AnglePID = {
 	.OutMin = -100,
 };
 PID_t SpeedPID = {
-	.Kp = 0,
+	.Kp = 1,
 	.Ki = 0,
 	.Kd = 0,
 	.OutMax = 20,
@@ -87,6 +91,7 @@ int main(void)
 	menu_init();
 	menu_load();
 	Pitch=0;
+	Encoder_Init();
 	PID_Init(&AnglePID);
 	PID_Init(&SpeedPID);
 	bluetooth_ch9141_init();
@@ -104,7 +109,10 @@ int main(void)
 		menu_key();
 		menu_save();
 //		printf("[plot,%f]",-Pitch-2);
-		tft180_show_int(0, 110,-Pitch-2 , 3);
+		tft180_show_int(50, 90,AnglePID.Target , 3);
+		tft180_show_int(0, 90,-Pitch , 3);
+		tft180_show_int(0, 110,encoderleft , 3);
+		tft180_show_int(0, 130,encoderright, 3);
 		//tft180_show_int(0, 30,acc_z , 3); 
         // 此处编写需要循环执行的代码
 //		Motor_SetSpeedright(1000);
@@ -127,11 +135,11 @@ void pit_handler (void)
 	cnt2++;
 	if(cnt==10)
 	{
-		mpu6050estimation_Pitch(&Pitch);  
+		mpu6050estimation_Pitch(&Pitch);  //姿态解算
 		cnt=0;
 	}
 	if(cnt1==20){
-		AnglePID.Actual = -Pitch-2;
+		AnglePID.Actual = -Pitch;			//角度环pid
 		PID_Update(&AnglePID);
 		AvePWM = -AnglePID.Out;
 		LeftPWM = AvePWM;
@@ -142,7 +150,7 @@ void pit_handler (void)
 		Motor_SetSpeedright(RightPWM*100);
 		cnt1=0;
 	}
-	if(cnt2==50)
+	if(cnt2==50)//速度环pid
 	{
 		cnt2=0;
 		LeftSpeed = Get_Encoder_Data_Left()/52/0.05/34;//公式：编码器值/一圈计数值/减速比/周期（单位：转/秒）  
@@ -151,17 +159,19 @@ void pit_handler (void)
 		DifSpeed=LeftSpeed-RightSpeed;
 		SpeedPID.Actual=AveSpeed;
 		PID_Update(&SpeedPID);
-	}
-	/*
-    encoderleft = Get_Encoder_Data_Left();              // 获取编码器计数（并非标准单位）
-    encoderright = Get_Encoder_Data_Right();            // 获取编码器计数（并非标准单位）
+		AnglePID.Target=SpeedPID.Out;
 		
-			如要获得转/秒，请用此公式
-			encoderleft = Get_Encoder_Data_Left()/52/0.01/34;		//公式：编码器值/一圈计数值/减速比/周期（单位：转/秒）  
-			encoderright = Get_Encoder_Data_Right()/52/0.01/34;	
+	}
 	
-    encoder_clear_count(ENCODER_QUADDEC_L);                                       // 清空编码器计数
-    encoder_clear_count(ENCODER_QUADDEC_R); 
-*/
+    //encoderleft = Get_Encoder_Data_Left();              // 获取编码器计数（并非标准单位）
+    //encoderright = Get_Encoder_Data_Right();            // 获取编码器计数（并非标准单位）
+		
+			//如要获得转/秒，请用此公式
+	encoderleft = Get_Encoder_Data_Left()/52/0.01/34;		//公式：编码器值/一圈计数值/减速比/周期（单位：转/秒）  
+	encoderright = Get_Encoder_Data_Right()/52/0.01/34;	
+	
+    //encoder_clear_count(ENCODER_QUADDEC_L);                                       // 清空编码器计数
+    //encoder_clear_count(ENCODER_QUADDEC_R); 
+
 // 清空编码器计数
 }

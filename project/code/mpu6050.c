@@ -55,11 +55,13 @@ void mpu6050estimation_Pitch(float*Pitch)
 		flag_mpu=1;
 		AngleY=AY;
 	}
-	else{
-	AngleY = AlphaPitch * AY + (1 - AlphaPitch) * GY;}//互补滤波
+	else
+		{
+			AngleY = AlphaPitch * AY + (1 - AlphaPitch) * GY;
+		}//互补滤波
 	
 	
-	*Pitch=AngleY;//赋值给储存Pitch的变量
+	*Pitch=AngleY+4;//赋值给储存Pitch的变量
 	
 }
 
