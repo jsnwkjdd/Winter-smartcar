@@ -1,9 +1,10 @@
 #include "zf_device_mpu6050.h"
 #include <math.h>
 
-float gyro_x,gyro_y,gyro_z,acc_x,acc_y,acc_z;//数据处理中间量
-float AX,AY,AZ,GX,GY,GZ,AngleX,AngleY,AngleZ;//互补滤波中间量
-float AlphaX = 0.001,AlphaPitch = 0.075;//互补滤波参数
+float gyro_x,gyro_y,gyro_z,acc_x,acc_y,acc_z,gyro_y1;//数据处理中间量
+float AX,AY,AZ,GX,GY,GZ,AngleX,AngleY,AngleZ;
+int16_t ax,az,gy;//互补滤波中间量
+float AlphaX = 0.001,AlphaPitch = 0.018;//互补滤波参数
 float t=0.01;//t角速度积分，和定时中断同步
 int16_t acc_xbias,acc_ybias,acc_zbias,gyro_xbias,gyro_ybias,gyro_zbias,flag_mpu=0;//零飘校准
 
@@ -15,6 +16,9 @@ void filtergy(float* a, float alpha);
 参数：储存解算好的Pitch,变量指针
 返回值：void
 */
+
+
+// alpha 零点
 void mpu6050estimation_Pitch(float*Pitch)
 {
 	mpu6050_get_acc(); //读取加速度计初始数据
@@ -22,9 +26,12 @@ void mpu6050estimation_Pitch(float*Pitch)
 	
 	//数据预处理:去零飘+限幅滤波，坐标轴标定：
 	
-	mpu6050_acc_x-=170;//去零飘
-	mpu6050_acc_z-=0;
-	mpu6050_gyro_y-=-78;
+//	mpu6050_acc_x-=80;//去零飘
+//	mpu6050_acc_z-=20;
+//	mpu6050_gyro_y-=0;
+	ax=mpu6050_acc_x-240;
+	az=mpu6050_acc_z-20;
+	gy=mpu6050_gyro_y;
 	
 	/*if(mpu6050_acc_x>-5&&mpu6050_acc_x<5)//限幅滤波
 	{
@@ -39,29 +46,31 @@ void mpu6050estimation_Pitch(float*Pitch)
 		mpu6050_gyro_y=0;
 	}*/
 	
-							//坐标轴标定
+	//坐标轴标定
 	
-	acc_x = mpu6050_acc_transition(mpu6050_acc_x); //加速度计转化为物理量 单位g
-	acc_z = mpu6050_acc_transition(mpu6050_acc_z);	
-	gyro_y = mpu6050_gyro_transition(mpu6050_gyro_y);//角速度计转化为物理量°/s
+	acc_x = mpu6050_acc_transition(ax); //加速度计转化为物理量 单位g
+	acc_z = mpu6050_acc_transition(az);	
+	//gyro_y = mpu6050_gyro_transition(mpu6050_gyro_y);//角速度计转化为物理量°/s
+	gyro_y = mpu6050_gyro_transition(gy);//角速度计转化为物理量°/s
 	filterax(&acc_x,0.9);
 	filteraz(&acc_z,0.9);
 	filtergy(&gyro_y,0.9);
-		
+	//gyro_y1=gyro_y+0.178449;//去零飘
+	gyro_y1=gyro_y+4.996;	
 	AY = -atan2(acc_x,acc_z)* 180.0f / 3.14159265f;//-? 得到加速度计算出的角度 °
-	GY = AngleY + gyro_y*t;		//得到角速度计算出的角度,t角速度积分，和定时中断同步
-	if(flag_mpu==0)
-	{
-		flag_mpu=1;
-		AngleY=AY;
-	}
-	else
-		{
-			AngleY = AlphaPitch * AY + (1 - AlphaPitch) * GY;
-		}//互补滤波
+	GY = AngleY + gyro_y1*t;		//得到角速度计算出的角度,t角速度积分，和定时中断同步
+//	if(flag_mpu==0)
+//	{
+		AngleY = AlphaPitch * AY + (1 - AlphaPitch) * GY;//互补滤波
+//	}
+//	else
+//		{
+//			//flag_mpu--;
+//			AngleY=AY;
+//		}
+//	
 	
-	
-	*Pitch=AngleY+4;//赋值给储存Pitch的变量
+	*Pitch=-AngleY+0.4;//赋值给储存Pitch的变量
 	
 }
 
