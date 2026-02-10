@@ -16,7 +16,7 @@
         <TargetCommonOption>
           <Device>MM32F3273G8P</Device>
           <Vendor>MindMotion</Vendor>
-          <PackID>MindMotion.MM32F3270_DFP.1.0.5</PackID>
+          <PackID>MindMotion.MM32F3270_DFP.1.0.6</PackID>
           <PackURL>http://www.mindmotion.com.cn/Download/MDK_KEIL/</PackURL>
           <Cpu>IRAM(0x20000000,0x20000) IROM(0x08000000,0x80000) CPUTYPE("Cortex-M3") CLOCK(12000000) ELITTLE</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
@@ -528,6 +528,16 @@
               <FileName>mode5.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\code\mode5.h</FilePath>
+            </File>
+            <File>
+              <FileName>mode2.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\mode2.c</FilePath>
+            </File>
+            <File>
+              <FileName>mode2.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\code\mode2.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -1355,5 +1365,14 @@
     <components/>
     <files/>
   </RTE>
+
+  <LayerInfo>
+    <Layers>
+      <Layer>
+        <LayName>mm32f327x_g8p</LayName>
+        <LayPrjMark>1</LayPrjMark>
+      </Layer>
+    </Layers>
+  </LayerInfo>
 
 </Project>
