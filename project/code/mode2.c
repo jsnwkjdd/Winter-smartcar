@@ -39,7 +39,7 @@ uint8_t mode2(void)
 			{
 				count_B--;
 			//======题目======
-				TurnPID.Target=0;		//转向环角度为零,要不要补一个角速度计呢
+				TurnPID.Target=0;		//转向环角度为零,要不要补一个角速度呢
 				SpeedPID.Target=20;			//给一个速度	
 
 

@@ -32,35 +32,47 @@
 * 日期              作者                备注
 * 2022-08-10        Teternal            first version
 ********************************************************************************************************************/
-
-#include "zf_common_headfile.h"
-#include "Encoder.h"
-#include "bluetooth.h"
-#include "mpu6050.h"
-#include "pid.h"
-#include "motor.h"
-#include "Encoder.h"
-#include "menu.h"
-#include "key.h"
-#include "flash.h"
-#include <stdint.h>
-#include "mode5.h"
-
-extern int16_t acc_xbias,acc_ybias,acc_zbias,gyro_xbias,gyro_ybias,gyro_zbias;//零飘校准
-extern float gyro_x,gyro_y,gyro_z,acc_x,acc_y,acc_z;//数据处理中间量
-float Pitch;
-float encoderleft,encoderright;
-int16_t f=1;
 // 打开新的工程或者工程移动了位置务必执行以下操作
 // 第一步 关闭上面所有打开的文件
 // 第二步 project->clean  等待下方进度条走完
 
 // 本例程是开源库移植用空工程
+
+
+#include "zf_common_headfile.h"
+#include <math.h>
+#include <stdint.h>
+#include "menu.h"
+#include "key.h"
+#include "flash.h"
+#include "Encoder.h"
+#include "motor.h"
+#include "mpu6050.h"
+#include "Mahony.h"
+#include "pid.h"
+#include "bluetooth.h"
+#include "mode5.h"
+#include "mode2.h"
+
+#define DEG_TO_RAD 0.017453292519943295f  // π/180
+#define RAD_TO_DEG 57.29577951308232f     // 180/π  
+
+
+extern int16_t ax,az,gy,flag_mpu;//互补滤波中间量
+extern int16_t acc_xbias,acc_ybias,acc_zbias,gyro_xbias,gyro_ybias,gyro_zbias;//零飘校准
+extern float gyro_x,gyro_y,gyro_z,acc_x,acc_y,acc_z,AX,AY,AZ,GX,GY,GZ,AngleX,AngleY,AngleZ;;//数据处理中间量
+extern volatile float q0 , q1, q2, q3 ;	
+extern float ax1,ay1,az1,gx1,gy1,gz1;
+
+float Pitch=0,Roll=0,Yaw=0;
+float encoderleft,encoderright;
+int16_t f=1;
 float LeftSpeed,RightSpeed;
 int16_t LeftPWM, RightPWM;
 int16_t AvePWM, DifPWM=0;
 int16_t AveSpeed, DifSpeed;
 extern float AngleY;
+
 PID_t AnglePID = {
 	.Kp = 1,
 	.Ki = 0,
@@ -91,46 +103,49 @@ int main(void)
     debug_init();                                                               // 初始化默认 Debug UART
 	pit_ms_init(PIT, 1);                                                      // 初始化 PIT（TIM6_PIT） 为周期中断 1ms 周期
 	interrupt_set_priority(PIT_PRIORITY, 0);
-	bluetooth_ch9141_init();
-	Motor_Init();
-	mpu6050_init();
 	my_key_init();
 	timer_key();
 	menu_init();
 	menu_load();
-	Pitch=0;
+	bluetooth_ch9141_init();
 	Encoder_Init();
+	Motor_Init();
+	mpu6050_init();
 	PID_Init(&AnglePID);
 	PID_Init(&SpeedPID);
 	PID_Init(&TurnPID);
-	bluetooth_ch9141_init();
 //	Motor_SetSpeedleft(0);
 //	Motor_SetSpeedright(0);
-	// 设置 PIT 对周期中断的中断优先级为 0
-    // 此处编写用户代码 例如外设初始化代码等
-//    	Motor_SetSpeedright(7000);
-//			Motor_SetSpeedleft(7000);
-    // 此处编写用户代码 例如外设初始化代码等
+// 设置 PIT 对周期中断的中断优先级为 0
+//  Motor_SetSpeedright(7000);
+//	Motor_SetSpeedleft(7000);
     while(1)
     {
-		//printf("%f\n",Pitch);
+		//===互补
+		printf("[plot,%d]",gy);//1
+		
+//		printf("[plot,%f,%f]",-AY,Pitch);//2
+//		
+//		printf("[plot,%f,%f,%f]",-AY,Pitch,GY);//3
+//		
+//		printf("[plot,%f,%f]",-atan2(ax1,az1)* 180.0f / 3.14159265f,Pitch);//4
+		
+		//====fin
+//		tft180_show_int(50, 90,AnglePID.Target , 3);
+//		tft180_show_float(0, 90,-Pitch , 2,2);
+//		tft180_show_float(0, 140,encoderleft , 3,2);
+//		tft180_show_float(0, 150,encoderright, 3,2);
+//		tft180_show_float(0, 100,mpu6050_gyro_y , 2,2); 
+//		tft180_show_float(0, 110,mpu6050_acc_x , 2,2); 
+//		tft180_show_float(0, 120,mpu6050_acc_z , 2,2);
+
+
 		menu_save();
 		menu_key();
 		menu_save();
-//		printf("[plot,%f]",-Pitch-2);
-		tft180_show_int(50, 90,AnglePID.Target , 3);
-		tft180_show_float(0, 90,-Pitch , 2,2);
-		tft180_show_float(0, 140,encoderleft , 3,2);
-		tft180_show_float(0, 150,encoderright, 3,2);
-		tft180_show_float(0, 100,mpu6050_gyro_y , 2,2); 
-		tft180_show_float(0, 110,mpu6050_acc_x , 2,2); 
-		tft180_show_float(0, 120,mpu6050_acc_z , 2,2);
-
 		mode5(&SpeedPID,&TurnPID);
-        // 此处编写需要循环执行的代码
 //		Motor_SetSpeedright(1000);
 //		Motor_SetSpeedleft(1000);
-        // 此处编写需要循环执行的代码
     }
 }
 // **************************** 代码区域 ****************************
@@ -143,15 +158,20 @@ int cnt2=0;
 int cnt3=0;
 void pit_handler (void)
 {	
-	
+	flag_mpu--;
 	cnt++;
 	cnt1++;
 	cnt2++;
 	cnt3++;
 	if(cnt==10)
 	{
-		mpu6050estimation_Pitch(&Pitch);  //姿态解算
+		mpu6050estimation_Pitch(&Pitch);  //姿态解算A
 		cnt=0;
+		
+		
+//		pre_mahony();						//B
+//		MahonyAHRSupdateIMU2(gx1*DEG_TO_RAD,gy1*DEG_TO_RAD,gz1*DEG_TO_RAD,ax1,ay1,az1);
+//		get_angles_from_quaternion(q0,q1,q2,q3,&Roll,&Pitch,&Yaw);
 	}
 	if(cnt1==20){
 		AnglePID.Actual = -Pitch;			//角度环pid
@@ -186,5 +206,4 @@ void pit_handler (void)
 	    encoder_clear_count(ENCODER_QUADDEC_R);
 		cnt3=0;		
 	}
-// 清空编码器计数
 }

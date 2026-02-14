@@ -539,6 +539,16 @@
               <FileType>5</FileType>
               <FilePath>..\code\mode2.h</FilePath>
             </File>
+            <File>
+              <FileName>Mahony.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\Mahony.c</FilePath>
+            </File>
+            <File>
+              <FileName>Mahony.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\code\Mahony.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
