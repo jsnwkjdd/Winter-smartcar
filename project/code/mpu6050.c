@@ -67,7 +67,7 @@ void mpu6050estimation_Pitch(float*Pitch)
 	
 	
 	//去零飘
-//	gyro_y1=gyro_y;
+	gyro_y1=gyro_y;
 	
 	
 	AY = -atan2(acc_x,acc_z)* 180.0f / 3.14159265f;//- 得到加速度计算出的角度 °

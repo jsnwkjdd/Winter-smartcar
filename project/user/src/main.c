@@ -73,7 +73,7 @@ int16_t AvePWM, DifPWM=0;
 int16_t AveSpeed, DifSpeed;
 extern float AngleY;
 
-PID_t AnglePID = {
+PID_t wPID = {
 	.Kp = 1,
 	.Ki = 0,
 	.Kd = 0,
@@ -81,8 +81,18 @@ PID_t AnglePID = {
 	.OutMax = 100,
 	.OutMin = -100,
 };
+
+
+PID_t AnglePID = {
+	.Kp = 0,
+	.Ki = 0,
+	.Kd = 0,
+	.Target=0,
+	.OutMax = 100,
+	.OutMin = -100,
+};
 PID_t SpeedPID = {
-	.Kp = 1,
+	.Kp = 0,
 	.Ki = 0,
 	.Kd = 0,
 	.OutMax = 20,
@@ -121,6 +131,7 @@ int main(void)
 //	Motor_SetSpeedleft(7000);
     while(1)
     {
+		system_delay_ms(8);
 		//===互补
 		printf("[plot,%d]",gy);//1
 		
@@ -172,10 +183,29 @@ void pit_handler (void)
 //		pre_mahony();						//B
 //		MahonyAHRSupdateIMU2(gx1*DEG_TO_RAD,gy1*DEG_TO_RAD,gz1*DEG_TO_RAD,ax1,ay1,az1);
 //		get_angles_from_quaternion(q0,q1,q2,q3,&Roll,&Pitch,&Yaw);
+		
+		
+//		//===角速度环
+//		
+//		AnglePID.Actual=gyro_y;
+//		PID_Update(&wPID);
+//		AvePWM = -wPID.Out;
+//		LeftPWM = AvePWM+DifPWM/2;
+//		RightPWM = AvePWM-DifPWM/2;
+//		if (LeftPWM > 100) {LeftPWM = 100;} else if (LeftPWM < -100) {LeftPWM = -100;}
+//		if (RightPWM > 100) {RightPWM = 100;} else if (RightPWM < -100) {RightPWM = -100;}
+//		Motor_SetSpeedleft(LeftPWM*100);
+//		Motor_SetSpeedright(RightPWM*100);
+//		//===fin
 	}
 	if(cnt1==20){
-		AnglePID.Actual = -Pitch;			//角度环pid
+		cnt1=0;
+		AnglePID.Actual = Pitch;			//角度环pid
 		PID_Update(&AnglePID);
+
+//	===角速度环
+//		wPID.Target =	AnglePID.Out;	
+		
 		AvePWM = -AnglePID.Out;
 		LeftPWM = AvePWM+DifPWM/2;
 		RightPWM = AvePWM-DifPWM/2;
@@ -183,7 +213,8 @@ void pit_handler (void)
 		if (RightPWM > 100) {RightPWM = 100;} else if (RightPWM < -100) {RightPWM = -100;}
 		Motor_SetSpeedleft(LeftPWM*100);
 		Motor_SetSpeedright(RightPWM*100);
-		cnt1=0;
+		
+		
 	}
 	if(cnt2==50)//速度环pid && 角度环pid
 	{
