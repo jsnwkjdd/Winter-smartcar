@@ -97,7 +97,7 @@ int main(void)
 	my_key_init();
 	timer_key();
 	menu_init();
-	menu_load();
+//	menu_load();
 	Pitch=0;
 	Encoder_Init();
 	PID_Init(&AnglePID);
@@ -116,15 +116,15 @@ int main(void)
 		//printf("%f\n",Pitch);
 		menu_save();
 		menu_key();
-		menu_save();
+//		menu_save();     
 //		printf("[plot,%f]",-Pitch-2);
-		tft180_show_int(50, 90,AnglePID.Target , 3);
+//		tft180_show_int(50, 90,AnglePID.Target , 3);
 		tft180_show_float(0, 90,-Pitch , 2,2);
-		tft180_show_float(0, 140,encoderleft , 3,2);
-		tft180_show_float(0, 150,encoderright, 3,2);
-		tft180_show_float(0, 100,mpu6050_gyro_y , 2,2); 
-		tft180_show_float(0, 110,mpu6050_acc_x , 2,2); 
-		tft180_show_float(0, 120,mpu6050_acc_z , 2,2);
+//		tft180_show_float(0, 140,encoderleft , 3,2);
+//		tft180_show_float(0, 150,encoderright, 3,2);
+//		tft180_show_float(0, 100,mpu6050_gyro_y , 2,2); 
+//		tft180_show_float(0, 110,mpu6050_acc_x , 2,2); 
+//		tft180_show_float(0, 120,mpu6050_acc_z , 2,2);
 
 		mode5(&SpeedPID,&TurnPID);
         // 此处编写需要循环执行的代码

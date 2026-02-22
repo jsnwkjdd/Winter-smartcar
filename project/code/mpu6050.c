@@ -46,10 +46,10 @@ void mpu6050estimation_Pitch(float*Pitch)
 		mpu6050_gyro_y=0;
 	}*/
 	
-	if(gy>-20&&gy<20)//角速度y限幅
-	{
-		gy=0;
-	}
+//	if(gy>-20&&gy<20)//角速度y限幅
+//	{
+//		gy=0;
+//	}
 //	else if(gy<-20)
 //	{
 //		gy+=20;
@@ -82,7 +82,7 @@ void mpu6050estimation_Pitch(float*Pitch)
 //		}
 //	
 	
-	*Pitch=-AngleY-4;//赋值给储存Pitch的变量
+	*Pitch=-AngleY-4+5.2;//赋值给储存Pitch的变量
 	
 }
 
