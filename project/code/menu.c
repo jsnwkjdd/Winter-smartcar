@@ -9,6 +9,7 @@ float ki=0.0;
 float kd=0.0;
 extern PID_t AnglePID;
 extern PID_t SpeedPID;
+extern PID_t wPID;
 //屏幕初始化函数
 void menu_init(void)
 {
@@ -37,12 +38,18 @@ void show(void)
 		tft180_show_string (0,30,hang==4?">ki2":"ki2");
 		tft180_show_string (0,40,hang==5?">kd2":"kd2");
 		tft180_show_string (0,50,hang==6?">kp2":"kp2");
+		tft180_show_string (0,60,hang==7?">ki3":"ki3");
+		tft180_show_string (0,70,hang==8?">kd3":"kd3");
+		tft180_show_string (0,80,hang==9?">kp3":"kp3");
 		tft180_show_float(40, 0, AnglePID.Ki, 3,3);
 		tft180_show_float(40, 10, AnglePID.Kd, 3,3);
 		tft180_show_float(40, 20, AnglePID.Kp, 3,3);
 		tft180_show_float(40, 30, SpeedPID.Ki, 3,3);
 		tft180_show_float(40, 40, SpeedPID.Kd, 3,3);
 		tft180_show_float(40, 50, SpeedPID.Kp, 3,3);
+		tft180_show_float(40, 60, wPID.Ki, 3,3);
+		tft180_show_float(40, 70, wPID.Kd, 3,3);
+		tft180_show_float(40, 80, wPID.Kp, 3,3);
 		tft180_show_string (100,0,change==1?"yes":"no");
 	}else if(mode==2)
 	{
@@ -86,7 +93,7 @@ void menu_key(void)
         {
             if(change==0)
             {
-                if(hang==6) hang=1;
+                if(hang==9) hang=1;
                 else hang=hang+1;
             }
             else
@@ -97,6 +104,9 @@ void menu_key(void)
 				else if(hang==4) SpeedPID.Ki+=0.01;
                 else if(hang==5) SpeedPID.Kd+=0.1;
                 else if(hang==6) SpeedPID.Kp+=0.1;
+				else if(hang==7) wPID.Ki+=0.01;
+                else if(hang==8) wPID.Kd+=0.1;
+                else if(hang==9) wPID.Kp+=0.001;
             }	
         }
     }
@@ -114,7 +124,7 @@ void menu_key(void)
         {
             if(change==0)
             {
-                if(hang==1) hang=6;
+                if(hang==1) hang=9;
                 else hang=hang-1;
             }
             else
@@ -125,6 +135,9 @@ void menu_key(void)
 				else if(hang==4) SpeedPID.Ki-=0.01;
                 else if(hang==5) SpeedPID.Kd-=0.1;
                 else if(hang==6) SpeedPID.Kp-=0.1;
+				else if(hang==7) wPID.Ki-=0.01;
+                else if(hang==8) wPID.Kd-=0.1;
+                else if(hang==9) wPID.Kp-=0.001;
             }	
         }
     }

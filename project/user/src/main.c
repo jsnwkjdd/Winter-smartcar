@@ -60,7 +60,7 @@
 
 extern int16_t ax,az,gy,flag_mpu;//互补滤波中间量
 extern int16_t acc_xbias,acc_ybias,acc_zbias,gyro_xbias,gyro_ybias,gyro_zbias;//零飘校准
-extern float gyro_x,gyro_y,gyro_z,acc_x,acc_y,acc_z,AX,AY,AZ,GX,GY,GZ,AngleX,AngleY,AngleZ;;//数据处理中间量
+extern float gyro_y1,gyro_x,gyro_y,gyro_z,acc_x,acc_y,acc_z,AX,AY,AZ,GX,GY,GZ,AngleX,AngleY,AngleZ;;//数据处理中间量
 extern volatile float q0 , q1, q2, q3 ;	
 extern float ax1,ay1,az1,gx1,gy1,gz1;
 
@@ -74,7 +74,7 @@ int16_t AveSpeed, DifSpeed;
 extern float AngleY;
 
 PID_t wPID = {
-	.Kp = 1,
+	.Kp = 0,
 	.Ki = 0,
 	.Kd = 0,
 	.Target=0,
@@ -124,26 +124,27 @@ int main(void)
 	PID_Init(&AnglePID);
 	PID_Init(&SpeedPID);
 	PID_Init(&TurnPID);
+	PID_Init(&wPID);
 //	Motor_SetSpeedleft(0);
 //	Motor_SetSpeedright(0);
 // 设置 PIT 对周期中断的中断优先级为 0
-//  Motor_SetSpeedright(7000);
-//	Motor_SetSpeedleft(7000);
+//    Motor_SetSpeedright(1000);
+//	Motor_SetSpeedleft(1000);
     while(1)
     {
 		system_delay_ms(8);
 		//===互补
-		printf("[plot,%d]",gy);//1
+//		printf("[plot,%d]",az	);//1
 		
 //		printf("[plot,%f,%f]",-AY,Pitch);//2
-//		
-//		printf("[plot,%f,%f,%f]",-AY,Pitch,GY);//3
+		
+		printf("[plot,%f,%f,%f]",-AY,Pitch,-GY);//3
 //		
 //		printf("[plot,%f,%f]",-atan2(ax1,az1)* 180.0f / 3.14159265f,Pitch);//4
 		
 		//====fin
 //		tft180_show_int(50, 90,AnglePID.Target , 3);
-//		tft180_show_float(0, 90,-Pitch , 2,2);
+		tft180_show_float(0, 90,-Pitch , 2,2);
 //		tft180_show_float(0, 140,encoderleft , 3,2);
 //		tft180_show_float(0, 150,encoderright, 3,2);
 //		tft180_show_float(0, 100,mpu6050_gyro_y , 2,2); 
@@ -177,7 +178,6 @@ void pit_handler (void)
 	if(cnt==10)
 	{
 		mpu6050estimation_Pitch(&Pitch);  //姿态解算A
-		cnt=0;
 		
 		
 //		pre_mahony();						//B
@@ -187,7 +187,7 @@ void pit_handler (void)
 		
 //		//===角速度环
 //		
-//		AnglePID.Actual=gyro_y;
+//		wPID.Actual=gyro_y1;
 //		PID_Update(&wPID);
 //		AvePWM = -wPID.Out;
 //		LeftPWM = AvePWM+DifPWM/2;
@@ -196,6 +196,7 @@ void pit_handler (void)
 //		if (RightPWM > 100) {RightPWM = 100;} else if (RightPWM < -100) {RightPWM = -100;}
 //		Motor_SetSpeedleft(LeftPWM*100);
 //		Motor_SetSpeedright(RightPWM*100);
+		cnt=0;
 //		//===fin
 	}
 	if(cnt1==20){

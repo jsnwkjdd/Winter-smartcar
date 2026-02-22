@@ -2,14 +2,14 @@
 #include <math.h>
 
  
-float t=0.01,zero=0,A_ration=0.04,AlphaPitch = 0.018;//t角速度积分，和定时中断同步/zero机械零点/
+float t=0.01,zero=4,A_ration=0.04,AlphaPitch = 0.025;//t角速度积分，和定时中断同步/zero机械零点/
 
 
 float AlphaX = 0.001;//互补滤波参数
 int16_t acc_xbias,acc_ybias,acc_zbias,gyro_xbias,gyro_ybias,gyro_zbias;//零飘校准
 float gyro_x,gyro_y,gyro_z,acc_x,acc_y,acc_z,gyro_y1;//数据处理中间量
 float AX,AY,AZ,GX,GY,GZ,AngleX,AngleY,AngleZ;
-int16_t ax,az,gy,flag_mpu=500;//互补滤波中间量
+int16_t ax,az,gy,flag_mpu=0;//互补滤波中间量
 void filterax(float*a,float alpha);
 void filteraz(float* a, float alpha);
 void filtergy(float* a, float alpha);
@@ -31,9 +31,9 @@ void mpu6050estimation_Pitch(float*Pitch)
 //	mpu6050_acc_x-=80;
 //	mpu6050_acc_z-=20;
 //	mpu6050_gyro_y-=0;
-	ax=mpu6050_acc_x-240;
+	ax=mpu6050_acc_x-240-170;
 	az=mpu6050_acc_z-20;
-	gy=mpu6050_gyro_y;
+	gy=mpu6050_gyro_y+85;
 
 	
 	//限幅滤波
@@ -45,11 +45,18 @@ void mpu6050estimation_Pitch(float*Pitch)
 	{
 	mpu6050_acc_z=0;
 	}*/
-//	if(gy>-5&&gy<5)//角速度y限幅
-//	{
-//		gy=0;
-//	}
-	
+	if(gy>-20&&gy<20)//角速度y限幅
+	{
+		gy=0;
+	}
+	else if(gy<-20)
+	{
+		gy+=20;
+	}
+	else if(gy>20)
+	{
+		gy-=20;
+	}
 	
 	
 	//坐标轴标定
@@ -72,7 +79,7 @@ void mpu6050estimation_Pitch(float*Pitch)
 	
 	AY = -atan2(acc_x,acc_z)* 180.0f / 3.14159265f;//- 得到加速度计算出的角度 °
 	GY = AngleY + gyro_y1*t;//得到角速度计算出的角度,t角速度积分，和定时中断同步
-	if(flag_mpu==0)
+	if(flag_mpu<=0)
 	{
 		AngleY = AlphaPitch * AY + (1 - AlphaPitch) * GY;//互补滤波
 		//另一种神奇形式
