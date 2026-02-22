@@ -74,7 +74,7 @@ int16_t AveSpeed, DifSpeed;
 extern float AngleY;
 
 PID_t wPID = {
-	.Kp = 0,
+	.Kp = -0.2,
 	.Ki = 0,
 	.Kd = 0,
 	.Target=0,
@@ -84,9 +84,9 @@ PID_t wPID = {
 
 
 PID_t AnglePID = {
-	.Kp = 0,
+	.Kp = 7,
 	.Ki = 0,
-	.Kd = 0,
+	.Kd = 2,
 	.Target=0,
 	.OutMax = 100,
 	.OutMin = -100,
@@ -116,7 +116,7 @@ int main(void)
 	my_key_init();
 	timer_key();
 	menu_init();
-	menu_load();
+//	menu_load();
 	bluetooth_ch9141_init();
 	Encoder_Init();
 	Motor_Init();
@@ -152,7 +152,7 @@ int main(void)
 //		tft180_show_float(0, 120,mpu6050_acc_z , 2,2);
 
 
-		menu_save();
+//		menu_save();
 		menu_key();
 		menu_save();
 		mode5(&SpeedPID,&TurnPID);
@@ -186,16 +186,16 @@ void pit_handler (void)
 		
 		
 //		//===角速度环
-//		
-//		wPID.Actual=gyro_y1;
-//		PID_Update(&wPID);
-//		AvePWM = -wPID.Out;
-//		LeftPWM = AvePWM+DifPWM/2;
-//		RightPWM = AvePWM-DifPWM/2;
-//		if (LeftPWM > 100) {LeftPWM = 100;} else if (LeftPWM < -100) {LeftPWM = -100;}
-//		if (RightPWM > 100) {RightPWM = 100;} else if (RightPWM < -100) {RightPWM = -100;}
-//		Motor_SetSpeedleft(LeftPWM*100);
-//		Motor_SetSpeedright(RightPWM*100);
+		
+		wPID.Actual=gyro_y1;
+		PID_Update(&wPID);
+		AvePWM = -wPID.Out;
+		LeftPWM = AvePWM+DifPWM/2;
+		RightPWM = AvePWM-DifPWM/2;
+		if (LeftPWM > 100) {LeftPWM = 100;} else if (LeftPWM < -100) {LeftPWM = -100;}
+		if (RightPWM > 100) {RightPWM = 100;} else if (RightPWM < -100) {RightPWM = -100;}
+		Motor_SetSpeedleft(LeftPWM*100);
+		Motor_SetSpeedright(RightPWM*100);
 		cnt=0;
 //		//===fin
 	}
@@ -205,15 +205,15 @@ void pit_handler (void)
 		PID_Update(&AnglePID);
 
 //	===角速度环
-//		wPID.Target =	AnglePID.Out;	
+		wPID.Target =	AnglePID.Out;	
 		
-		AvePWM = -AnglePID.Out;
-		LeftPWM = AvePWM+DifPWM/2;
-		RightPWM = AvePWM-DifPWM/2;
-		if (LeftPWM > 100) {LeftPWM = 100;} else if (LeftPWM < -100) {LeftPWM = -100;}
-		if (RightPWM > 100) {RightPWM = 100;} else if (RightPWM < -100) {RightPWM = -100;}
-		Motor_SetSpeedleft(LeftPWM*100);
-		Motor_SetSpeedright(RightPWM*100);
+//		AvePWM = -AnglePID.Out;
+//		LeftPWM = AvePWM+DifPWM/2;
+//		RightPWM = AvePWM-DifPWM/2;
+//		if (LeftPWM > 100) {LeftPWM = 100;} else if (LeftPWM < -100) {LeftPWM = -100;}
+//		if (RightPWM > 100) {RightPWM = 100;} else if (RightPWM < -100) {RightPWM = -100;}
+//		Motor_SetSpeedleft(LeftPWM*100);
+//		Motor_SetSpeedright(RightPWM*100);
 		
 		
 	}

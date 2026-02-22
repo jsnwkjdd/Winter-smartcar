@@ -45,18 +45,18 @@ void mpu6050estimation_Pitch(float*Pitch)
 	{
 	mpu6050_acc_z=0;
 	}*/
-	if(gy>-20&&gy<20)//角速度y限幅
-	{
-		gy=0;
-	}
-	else if(gy<-20)
-	{
-		gy+=20;
-	}
-	else if(gy>20)
-	{
-		gy-=20;
-	}
+//	if(gy>-20&&gy<20)//角速度y限幅
+//	{
+//		gy=0;
+//	}
+//	else if(gy<-20)
+//	{
+//		gy+=20;
+//	}
+//	else if(gy>20)
+//	{
+//		gy-=20;
+//	}
 	
 	
 	//坐标轴标定
@@ -70,7 +70,7 @@ void mpu6050estimation_Pitch(float*Pitch)
 	
 	filterax(&acc_x,0.9);//一阶滤波
 	filteraz(&acc_z,0.9);
-	filtergy(&gyro_y,0.9);
+	filtergy(&gyro_y,0.83);
 	
 	
 	//去零飘
