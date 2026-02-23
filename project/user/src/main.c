@@ -122,9 +122,9 @@ int main(void)
 		tft180_show_float(0, 90,-Pitch , 2,2);
 //		tft180_show_float(0, 140,encoderleft , 3,2);
 //		tft180_show_float(0, 150,encoderright, 3,2);
-//		tft180_show_float(0, 100,mpu6050_gyro_y , 2,2); 
-//		tft180_show_float(0, 110,mpu6050_acc_x , 2,2); 
-//		tft180_show_float(0, 120,mpu6050_acc_z , 2,2);
+		tft180_show_float(0, 100,mpu6050_gyro_y , 2,2); 
+		tft180_show_float(0, 110,mpu6050_acc_x , 2,2); 
+		tft180_show_float(0, 120,mpu6050_acc_z , 2,2);
 
 		mode5(&SpeedPID,&TurnPID);
         // 此处编写需要循环执行的代码
