@@ -122,6 +122,8 @@ int main(void)
 		tft180_show_float(0, 90,-Pitch , 2,2);
 //		tft180_show_float(0, 140,encoderleft , 3,2);
 //		tft180_show_float(0, 150,encoderright, 3,2);
+		mpu6050_get_acc(); //读取加速度计初始数据
+		mpu6050_get_gyro(); //读取角速度计初始数据 
 		tft180_show_float(0, 100,mpu6050_gyro_y , 2,2); 
 		tft180_show_float(0, 110,mpu6050_acc_x , 2,2); 
 		tft180_show_float(0, 120,mpu6050_acc_z , 2,2);
@@ -150,7 +152,7 @@ void pit_handler (void)
 	cnt3++;
 	if(cnt==10)
 	{
-		mpu6050estimation_Pitch(&Pitch);  //姿态解算
+//		mpu6050estimation_Pitch(&Pitch);  //姿态解算
 		cnt=0;
 	}
 	if(cnt1==20){
