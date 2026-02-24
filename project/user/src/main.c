@@ -89,7 +89,7 @@ int main(void)
 {
     clock_init(SYSTEM_CLOCK_120M);                                              // 初始化芯片时钟 工作频率为 120MHz
     debug_init();                                                               // 初始化默认 Debug UART
-	pit_ms_init(PIT, 1);                                                      // 初始化 PIT（TIM6_PIT） 为周期中断 1ms 周期
+//	pit_ms_init(PIT, 1);                                                      // 初始化 PIT（TIM6_PIT） 为周期中断 1ms 周期
 	interrupt_set_priority(PIT_PRIORITY, 0);
 	bluetooth_ch9141_init();
 	Motor_Init();
@@ -128,7 +128,7 @@ int main(void)
 		tft180_show_float(0, 110,mpu6050_acc_x , 2,2); 
 		tft180_show_float(0, 120,mpu6050_acc_z , 2,2);
 
-		mode5(&SpeedPID,&TurnPID);
+//		mode5(&SpeedPID,&TurnPID);
         // 此处编写需要循环执行的代码
 //		Motor_SetSpeedright(1000);
 //		Motor_SetSpeedleft(1000);
@@ -155,38 +155,38 @@ void pit_handler (void)
 //		mpu6050estimation_Pitch(&Pitch);  //姿态解算
 		cnt=0;
 	}
-	if(cnt1==20){
-		AnglePID.Actual = -Pitch;			//角度环pid
-		PID_Update(&AnglePID);
-		AvePWM = -AnglePID.Out;
-		LeftPWM = AvePWM+DifPWM/2;
-		RightPWM = AvePWM-DifPWM/2;
-		if (LeftPWM > 100) {LeftPWM = 100;} else if (LeftPWM < -100) {LeftPWM = -100;}
-		if (RightPWM > 100) {RightPWM = 100;} else if (RightPWM < -100) {RightPWM = -100;}
-		Motor_SetSpeedleft(LeftPWM*100);
-		Motor_SetSpeedright(RightPWM*100);
-		cnt1=0;
-	}
-	if(cnt2==50)//速度环pid && 角度环pid
-	{
-		cnt2=0;
-		LeftSpeed = Get_Encoder_Data_Left()/13.0/34/0.05;	//公式：编码器值/一圈计数值/减速比/周期（单位：转/秒）  
-		RightSpeed = Get_Encoder_Data_Right()/13.0/34/0.05;
-		AveSpeed=(LeftSpeed+RightSpeed)/2.0;
-		DifSpeed=LeftSpeed-RightSpeed;
-		SpeedPID.Actual=AveSpeed;
-		PID_Update(&SpeedPID);
-		AnglePID.Target=SpeedPID.Out;
-		
-		TurnPID.Actual=DifSpeed;
-		PID_Update(&TurnPID);
-		DifPWM=TurnPID.Out;
-	}	
-//公式：编码器值/一圈计数值/减速比/周期（单位：转/秒）  
-	if(cnt3==50){
-	    encoder_clear_count(ENCODER_QUADDEC_L);                                       // 清空编码器计数
-	    encoder_clear_count(ENCODER_QUADDEC_R);
-		cnt3=0;		
-	}
+//	if(cnt1==20){
+//		AnglePID.Actual = -Pitch;			//角度环pid
+//		PID_Update(&AnglePID);
+//		AvePWM = -AnglePID.Out;
+//		LeftPWM = AvePWM+DifPWM/2;
+//		RightPWM = AvePWM-DifPWM/2;
+//		if (LeftPWM > 100) {LeftPWM = 100;} else if (LeftPWM < -100) {LeftPWM = -100;}
+//		if (RightPWM > 100) {RightPWM = 100;} else if (RightPWM < -100) {RightPWM = -100;}
+//		Motor_SetSpeedleft(LeftPWM*100);
+//		Motor_SetSpeedright(RightPWM*100);
+//		cnt1=0;
+//	}
+//	if(cnt2==50)//速度环pid && 角度环pid
+//	{
+//		cnt2=0;
+//		LeftSpeed = Get_Encoder_Data_Left()/13.0/34/0.05;	//公式：编码器值/一圈计数值/减速比/周期（单位：转/秒）  
+//		RightSpeed = Get_Encoder_Data_Right()/13.0/34/0.05;
+//		AveSpeed=(LeftSpeed+RightSpeed)/2.0;
+//		DifSpeed=LeftSpeed-RightSpeed;
+//		SpeedPID.Actual=AveSpeed;
+//		PID_Update(&SpeedPID);
+//		AnglePID.Target=SpeedPID.Out;
+//		
+//		TurnPID.Actual=DifSpeed;
+//		PID_Update(&TurnPID);
+//		DifPWM=TurnPID.Out;
+//	}	
+////公式：编码器值/一圈计数值/减速比/周期（单位：转/秒）  
+//	if(cnt3==50){
+//	    encoder_clear_count(ENCODER_QUADDEC_L);                                       // 清空编码器计数
+//	    encoder_clear_count(ENCODER_QUADDEC_R);
+//		cnt3=0;		
+//	}
 // 清空编码器计数
 }
