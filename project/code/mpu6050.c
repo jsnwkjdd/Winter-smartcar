@@ -1,10 +1,11 @@
 #include "zf_device_mpu6050.h"
+#include "zf_driver_soft_iic.h"
 #include <math.h>
 
  
 float t=0.01,zero=4,A_ration=0.04,AlphaPitch = 0.025;//t角速度积分，和定时中断同步/zero机械零点/
 
-
+extern soft_iic_info_struct mpu6050_iic_struct;
 float AlphaX = 0.001;//互补滤波参数
 int16_t acc_xbias,acc_ybias,acc_zbias,gyro_xbias,gyro_ybias,gyro_zbias;//零飘校准
 float gyro_x,gyro_y,gyro_z,acc_x,acc_y,acc_z,gyro_y1;//数据处理中间量
@@ -22,6 +23,7 @@ void filtergy(float* a, float alpha);
 
 void mpu6050estimation_Pitch(float*Pitch)
 {
+	soft_iic_init(&mpu6050_iic_struct, MPU6050_DEV_ADDR, MPU6050_SOFT_IIC_DELAY, MPU6050_SCL_PIN, MPU6050_SDA_PIN);
 	mpu6050_get_acc(); //读取加速度计初始数据
 	mpu6050_get_gyro(); //读取角速度计初始数据 
 
