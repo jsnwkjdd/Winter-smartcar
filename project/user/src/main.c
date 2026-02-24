@@ -57,193 +57,160 @@
 #define DEG_TO_RAD 0.017453292519943295f  // π/180
 #define RAD_TO_DEG 57.29577951308232f     // 180/π  
 
+// 全局变量声明
 extern soft_iic_info_struct mpu6050_iic_struct;
-extern int16_t ax,az,gy,flag_mpu;//互补滤波中间量
-extern int16_t acc_xbias,acc_ybias,acc_zbias,gyro_xbias,gyro_ybias,gyro_zbias;//零飘校准
-extern float gyro_y1,gyro_x,gyro_y,gyro_z,acc_x,acc_y,acc_z,AX,AY,AZ,GX,GY,GZ,AngleX,AngleY,AngleZ;;//数据处理中间量
+extern int16_t ax, az, gy, flag_mpu;
+extern int16_t acc_xbias, acc_ybias, acc_zbias, gyro_xbias, gyro_ybias, gyro_zbias;
+extern float gyro_y1, gyro_x, gyro_y, gyro_z, acc_x, acc_y, acc_z, AX, AY, AZ, GX, GY, GZ, AngleX, AngleY, AngleZ;
 extern volatile float q0 , q1, q2, q3 ;	
-extern float ax1,ay1,az1,gx1,gy1,gz1;
+extern float ax1, ay1, az1, gx1, gy1, gz1;
 
-float Pitch=0,Roll=0,Yaw=0;
-float encoderleft,encoderright;
+float Pitch=0, Roll=0, Yaw=0;
+float encoderleft, encoderright;
 int16_t f=1;
-float LeftSpeed,RightSpeed;
+float LeftSpeed, RightSpeed;
 int16_t LeftPWM, RightPWM;
 int16_t AvePWM, DifPWM=0;
 int16_t AveSpeed, DifSpeed;
-extern float AngleY;
 
+// PID 参数（基础可用值，可根据实际调试）
 PID_t wPID = {
-	.Kp = -0.1,
-	.Ki = 0,
-	.Kd = 0,
-	.Target=0,
-	.OutMax = 100,
-	.OutMin = -100,
+    .Kp = -0.1,
+    .Ki = 0.01,
+    .Kd = 0.05,
+    .Target = 0,
+    .OutMax = 100,
+    .OutMin = -100,
 };
-
 
 PID_t AnglePID = {
-	.Kp = 0,
-	.Ki = 0,
-	.Kd = -0.2,
-	.Target=0,
-	.OutMax = 100,
-	.OutMin = -100,
+    .Kp = 2.0,
+    .Ki = 0.05,
+    .Kd = -0.2,
+    .Target = 0,
+    .OutMax = 100,
+    .OutMin = -100,
 };
+
 PID_t SpeedPID = {
-	.Kp = 0,
-	.Ki = 0,
-	.Kd = 0,
-	.OutMax = 20,
-	.OutMin = -20,
-	.Target=0,
+    .Kp = 1.0,
+    .Ki = 0.02,
+    .Kd = 0.1,
+    .OutMax = 20,
+    .OutMin = -20,
+    .Target = 0,
 };
+
 PID_t TurnPID = {
-	.Kp = 0,
-	.Ki = 0,
-	.Kd = 0,
-	.OutMax = 50,
-	.OutMin = -50,
+    .Kp = 1.5,
+    .Ki = 0.01,
+    .Kd = 0.05,
+    .OutMax = 50,
+    .OutMin = -50,
 };
-// **************************** 代码区域 ****************************
-int main(void)
-{
-    clock_init(SYSTEM_CLOCK_120M);                                              // 初始化芯片时钟 工作频率为 120MHz
-    debug_init();                                                               // 初始化默认 Debug UART
-	pit_ms_init(PIT, 1);                                                      // 初始化 PIT（TIM6_PIT） 为周期中断 1ms 周期
-	interrupt_set_priority(PIT_PRIORITY, 0);
-	my_key_init();
-	timer_key();
-	menu_init();
-//	menu_load();
-	bluetooth_ch9141_init();
-	Encoder_Init();
-	Motor_Init();
-	mpu6050_init();
-	PID_Init(&AnglePID);
-	PID_Init(&SpeedPID);
-	PID_Init(&TurnPID);
-	PID_Init(&wPID);
-	Motor_SetSpeedleft(0);
-	Motor_SetSpeedright(0);
-// 设置 PIT 对周期中断的中断优先级为 0
-//	Motor_SetSpeedright(9000);
-//	Motor_SetSpeedleft(9000);
-    while(1)
-    {
-		system_delay_ms(8);
-		//===互补
-//		printf("[plot,%d]",az	);//1
-		
-//		printf("[plot,%f,%f]",-AY,Pitch);//2
-		
-//		printf("[plot,%f,%f,%f]",-AY,Pitch,-GY);//3
-//		
-//		printf("[plot,%f,%f]",-atan2(ax1,az1)* 180.0f / 3.14159265f,Pitch);//4
-		
-		//====fin
-//		tft180_show_int(50, 90,AnglePID.Target , 3);
-		tft180_show_float(0, 90,-Pitch , 2,2);
-//		tft180_show_float(0, 140,encoderleft , 3,2);
-//		tft180_show_float(0, 150,encoderright, 3,2);
-//		tft180_show_float(0, 100,mpu6050_gyro_y , 2,2); 
-//		tft180_show_float(0, 110,mpu6050_acc_x , 2,2); 
-//		tft180_show_float(0, 120,mpu6050_acc_z , 2,2);
-		
 
+// 中断计数（全局变量，避免重复定义）
+volatile uint16_t pit_cnt = 0;
 
-//		menu_save();
-		menu_key();
-		menu_save();
-		mode5(&SpeedPID,&TurnPID);
-//		Motor_SetSpeedright(1000);
-//		Motor_SetSpeedleft(1000);
-
-		soft_iic_init(&mpu6050_iic_struct, MPU6050_DEV_ADDR, MPU6050_SOFT_IIC_DELAY, MPU6050_SCL_PIN, MPU6050_SDA_PIN);
-		mpu6050_get_acc(); //读取加速度计初始数据
-		mpu6050_get_gyro(); //读取角速度计初始数据 
-//		printf("[plot,%d]",az	);//1
-    }
-}
-// **************************** 代码区域 ****************************
-/*
-		此为编码器的中断，isr.c中见tim6
-*/
-int cnt=0;
-int cnt1=0;
-int cnt2=0;
-int cnt3=0;
+// PIT中断处理函数（轻量化改造）
 void pit_handler (void)
 {	
-	flag_mpu--;
-	cnt++;
-	cnt1++;
-	cnt2++;
-	cnt3++;
-	if(cnt==10)
-	{
-		mpu6050estimation_Pitch(&Pitch);  //姿态解算A
-		
-		
-//		pre_mahony();						//B
-//		MahonyAHRSupdateIMU2(gx1*DEG_TO_RAD,gy1*DEG_TO_RAD,gz1*DEG_TO_RAD,ax1,ay1,az1);
-//		get_angles_from_quaternion(q0,q1,q2,q3,&Roll,&Pitch,&Yaw);
-		
-		
-//		//===角速度环
-		
-		wPID.Actual=gyro_y1;
-		wPID.Target =	AnglePID.Out;
-		PID_Update(&wPID);
-		AvePWM = -wPID.Out;
-		LeftPWM = AvePWM+DifPWM/2;
-		RightPWM = AvePWM-DifPWM/2;
-		if (LeftPWM > 100) {LeftPWM = 100;} else if (LeftPWM < -100) {LeftPWM = -100;}
-		if (RightPWM > 100) {RightPWM = 100;} else if (RightPWM < -100) {RightPWM = -100;}
-		Motor_SetSpeedleft(LeftPWM*400);
-		Motor_SetSpeedright(RightPWM*400);
-		cnt=0;
-//		//===fin
-	}
-	if(cnt1==20){
-		cnt1=0;
-		AnglePID.Actual = Pitch;			//角度环pid
-		PID_Update(&AnglePID);
-		AnglePID.Target=SpeedPID.Out;
+    pit_cnt++;
+    flag_mpu--;
 
-//	===角速度环
-//		wPID.Target =	AnglePID.Out;	
-		
-//		AvePWM = -AnglePID.Out;
-//		LeftPWM = AvePWM+DifPWM/2;
-//		RightPWM = AvePWM-DifPWM/2;
-//		if (LeftPWM > 100) {LeftPWM = 100;} else if (LeftPWM < -100) {LeftPWM = -100;}
-//		if (RightPWM > 100) {RightPWM = 100;} else if (RightPWM < -100) {RightPWM = -100;}
-//		Motor_SetSpeedleft(LeftPWM*100);
-//		Motor_SetSpeedright(RightPWM*100);
-		
-		
-	}
-	if(cnt2==50)//速度环pid && 角度环pid
-	{
-		cnt2=0;
-		LeftSpeed = Get_Encoder_Data_Left()/13.0/34/0.05;	//公式：编码器值/一圈计数值/减速比/周期（单位：转/秒）  
-		RightSpeed = Get_Encoder_Data_Right()/13.0/34/0.05;
-		AveSpeed=(LeftSpeed+RightSpeed)/2.0;
-		DifSpeed=LeftSpeed-RightSpeed;
-		SpeedPID.Actual=AveSpeed;
-		PID_Update(&SpeedPID);
-//		AnglePID.Target=SpeedPID.Out;
-		
-		TurnPID.Actual=DifSpeed;
-		PID_Update(&TurnPID);
-		DifPWM=TurnPID.Out;
-	}	
-//公式：编码器值/一圈计数值/减速比/周期（单位：转/秒）  
-	if(cnt3==50){
-	    encoder_clear_count(ENCODER_QUADDEC_L);                                       // 清空编码器计数
-	    encoder_clear_count(ENCODER_QUADDEC_R);
-		cnt3=0;		
-	}
+    // 每10ms：姿态解算 + 角速度环PID + 电机控制
+    if(pit_cnt % 10 == 0)
+    {
+        mpu6050estimation_Pitch(&Pitch);  // 姿态解算
+        wPID.Actual = gyro_y1;
+        wPID.Target = AnglePID.Out;
+        PID_Update(&wPID);
+        
+        AvePWM = -wPID.Out;
+        LeftPWM = AvePWM + DifPWM/2;
+        RightPWM = AvePWM - DifPWM/2;
+        
+        // PWM限幅（简化逻辑）
+        if (LeftPWM > 100) {LeftPWM = 100;} else if (LeftPWM < -100) {LeftPWM = -100;}
+		if (RightPWM > 100) {RightPWM = 100;} else if (RightPWM < -100) {RightPWM = -100;}
+        
+        Motor_SetSpeedleft(LeftPWM*400);
+        Motor_SetSpeedright(RightPWM*400);
+    }
+
+    // 每20ms：角度环PID
+    if(pit_cnt % 20 == 0)
+    {
+        AnglePID.Actual = Pitch;
+        PID_Update(&AnglePID);
+        AnglePID.Target = SpeedPID.Out;
+    }
+
+    // 每50ms：速度环PID + 转向PID + 编码器清零
+    if(pit_cnt % 50 == 0)
+    {
+        // 速度计算
+        LeftSpeed = Get_Encoder_Data_Left()/13.0/34/0.05;
+        RightSpeed = Get_Encoder_Data_Right()/13.0/34/0.05;
+        AveSpeed = (LeftSpeed + RightSpeed)/2.0;
+        DifSpeed = LeftSpeed - RightSpeed;
+        
+        // 速度环PID
+        SpeedPID.Actual = AveSpeed;
+        PID_Update(&SpeedPID);
+        
+        // 转向PID
+        TurnPID.Actual = DifSpeed;
+        PID_Update(&TurnPID);
+        DifPWM = TurnPID.Out;
+        
+        // 编码器清零
+        encoder_clear_count(ENCODER_QUADDEC_L);
+        encoder_clear_count(ENCODER_QUADDEC_R);
+    }
+
+    // 计数溢出重置
+    if(pit_cnt >= 1000) pit_cnt = 0;
+}
+
+// 主函数（核心：初始化只执行一次，主循环轻量化）
+int main(void)
+{
+    // 1. 基础时钟/中断初始化
+    clock_init(SYSTEM_CLOCK_120M);                                              // 初始化芯片时钟 120MHz
+    debug_init();                                                               // 初始化Debug UART
+    pit_ms_init(PIT, 1);                                                        // 初始化PIT 1ms周期中断
+    interrupt_set_priority(PIT_PRIORITY, 1);                                    // 降低中断优先级，避免抢占所有资源
+
+    // 2. 外设初始化（只执行一次）
+    my_key_init();
+    timer_key();
+    menu_init();
+    bluetooth_ch9141_init();
+    Encoder_Init();
+    Motor_Init();
+
+    // 3. MPU6050初始化（IIC只初始化一次，通信失败时在解算函数里重试）
+    soft_iic_init(&mpu6050_iic_struct, MPU6050_DEV_ADDR, MPU6050_SOFT_IIC_DELAY, MPU6050_SCL_PIN, MPU6050_SDA_PIN);
+    mpu6050_init();                                                             // MPU6050初始化
+
+    // 4. PID初始化
+    PID_Init(&AnglePID);
+    PID_Init(&SpeedPID);
+    PID_Init(&TurnPID);
+    PID_Init(&wPID);
+
+    // 5. 电机初始状态
+    Motor_SetSpeedleft(0);
+    Motor_SetSpeedright(0);
+
+    // 主循环（只处理低速逻辑）
+    while(1)
+    {
+        system_delay_ms(8);
+        menu_key();        // 按键处理
+        menu_save();       // 菜单保存
+        mode5(&SpeedPID,&TurnPID);  // 模式控制
+        tft180_show_float(0, 90, -Pitch, 2, 2);  // 屏幕显示角度
+    }
 }

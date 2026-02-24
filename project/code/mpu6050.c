@@ -1,6 +1,7 @@
 #include "zf_device_mpu6050.h"
 #include "zf_driver_soft_iic.h"
 #include <math.h>
+#include "zf_common_headfile.h"
 
  
 float t=0.01,zero=7,A_ration=0.04,AlphaPitch = 0.025;//t角速度积分，和定时中断同步/zero机械零点/
@@ -23,78 +24,100 @@ void filtergy(float* a, float alpha);
 
 void mpu6050estimation_Pitch(float*Pitch)
 {
-//	soft_iic_init(&mpu6050_iic_struct, MPU6050_DEV_ADDR, MPU6050_SOFT_IIC_DELAY, MPU6050_SCL_PIN, MPU6050_SDA_PIN);
-//	mpu6050_get_acc(); //读取加速度计初始数据
-//	mpu6050_get_gyro(); //读取角速度计初始数据 
+    // 静态变量：滤波历史值 + 数据异常检测
+    static float last_acc_x = 0.0f, last_acc_z = 0.0f, last_gyro_y = 0.0f;
+    static uint8_t init_flag = 0;
+    static int16_t last_acc_x_raw = 0, last_acc_z_raw = 0, last_gyro_y_raw = 0; // 新增：记录上一次原始数据
+    static uint8_t error_count = 0; // 新增：异常计数
 
-	
-	
-	//去零飘
-//	mpu6050_acc_x-=80;
-//	mpu6050_acc_z-=20;
-//	mpu6050_gyro_y-=0;
-	ax=mpu6050_acc_x-15;
-	az=mpu6050_acc_z-20;
-	gy=mpu6050_gyro_y+6;
+    if(init_flag == 0)
+    {
+        last_acc_x = 0.0f;
+        last_acc_z = 0.0f;
+        last_gyro_y = 0.0f;
+        last_acc_x_raw = 0;
+        last_acc_z_raw = 0;
+        last_gyro_y_raw = 0;
+        error_count = 0;
+        init_flag = 1;
+    }
 
-	
-	//限幅滤波
-	/*if(mpu6050_acc_x>-5&&mpu6050_acc_x<5)
-	{
-	mpu6050_acc_x=0;
-	}
-	if(mpu6050_acc_z>-5&&mpu6050_acc_z<5)
-	{
-	mpu6050_acc_z=0;
-	}*/
-//	if(gy>-20&&gy<20)//角速度y限幅
-//	{
-//		gy=0;
-//	}
-//	else if(gy<-20)
-//	{
-//		gy+=20;
-//	}
-//	else if(gy>20)
-//	{
-//		gy-=20;
-//	}
-	
-	
-	//坐标轴标定
-	
-	
+    // 1. 读取传感器数据（逐飞库原生方式）
+    mpu6050_get_acc(); 
+    mpu6050_get_gyro(); 
 
-	acc_x = mpu6050_acc_transition(ax); //加速度计转化为物理量 单位g
-	acc_z = mpu6050_acc_transition(az);
-	gyro_y = mpu6050_gyro_transition(gy);//角速度计转化为物理量°/s
-	
-	
-	filterax(&acc_x,0.9);//一阶滤波
-	filteraz(&acc_z,0.9);
-	filtergy(&gyro_y,0.83);
-	
-	
-	//去零飘
-	gyro_y1=gyro_y;
-	
-	
-	AY = -atan2(acc_x,acc_z)* 180.0f / 3.14159265f;//- 得到加速度计算出的角度 °
-	GY = AngleY + gyro_y1*t;//得到角速度计算出的角度,t角速度积分，和定时中断同步
-	if(flag_mpu<=0)
-	{
-		AngleY = AlphaPitch * AY + (1 - AlphaPitch) * GY;//互补滤波
-		//另一种神奇形式
-//		AngleY+=gyro_y1*t+(AY-AngleY)*A_ration;//注意A_ration随t变化
-	}
-	else
-	{
-		AngleY=AY;
-	}
+    // 2. 检测数据是否异常（通信失败的特征）
+    uint8_t data_error = 0;
+    // 异常条件1：数据和上一次完全一样（总线卡死，数据不更新）
+    if(mpu6050_acc_x == last_acc_x_raw && mpu6050_acc_z == last_acc_z_raw && mpu6050_gyro_y == last_gyro_y_raw)
+    {
+        error_count++;
+        if(error_count >= 3) // 连续3次数据不变，判定为通信失败
+        {
+            data_error = 1;
+            error_count = 0; // 重置计数
+        }
+    }
+    else
+    {
+        error_count = 0; // 数据更新，重置异常计数
+    }
 
+    // 异常条件2：数据为极值（IIC通信乱码）
+    if(mpu6050_acc_x == 32767 || mpu6050_acc_x == -32768 || 
+       mpu6050_acc_z == 32767 || mpu6050_acc_z == -32768 ||
+       mpu6050_gyro_y == 32767 || mpu6050_gyro_y == -32768)
+    {
+        data_error = 1;
+    }
 
-	*Pitch=-AngleY+zero;//赋值给储存Pitch的变量，+机械中值
+    // 3. 通信失败时，重新初始化（仅应急）
+    if(data_error == 1)
+    {
+        // 重新初始化IIC和MPU6050
+        soft_iic_init(&mpu6050_iic_struct, MPU6050_DEV_ADDR, MPU6050_SOFT_IIC_DELAY, MPU6050_SCL_PIN, MPU6050_SDA_PIN);
+        mpu6050_init();
+		system_delay_ms(1);
+        // 重试读取一次
+        mpu6050_get_acc();
+        mpu6050_get_gyro();
+    }
 
+    // 4. 保存本次原始数据，用于下一次异常检测
+    last_acc_x_raw = mpu6050_acc_x;
+    last_acc_z_raw = mpu6050_acc_z;
+    last_gyro_y_raw = mpu6050_gyro_y;
+
+    // 5. 原有解算逻辑（不变）
+    ax=mpu6050_acc_x-15;
+    az=mpu6050_acc_z-20;
+    gy=mpu6050_gyro_y+6;
+
+    acc_x = mpu6050_acc_transition(ax);
+    acc_z = mpu6050_acc_transition(az);
+    gyro_y = mpu6050_gyro_transition(gy);
+    
+    // 简化滤波
+    acc_x = 0.9 * acc_x + 0.1 * last_acc_x;
+    acc_z = 0.9 * acc_z + 0.1 * last_acc_z;
+    gyro_y = 0.83 * gyro_y + 0.17 * last_gyro_y;
+    last_acc_x = acc_x;
+    last_acc_z = acc_z;
+    last_gyro_y = gyro_y;
+
+    gyro_y1=gyro_y;
+    AY = -atan2(acc_x,acc_z)* 180.0f / 3.14159265f;
+    GY = AngleY + gyro_y1*t;
+    if(flag_mpu<=0)
+    {
+        AngleY = AlphaPitch * AY + (1 - AlphaPitch) * GY;
+    }
+    else
+    {
+        AngleY=AY;
+    }
+
+    *Pitch=-AngleY+zero;
 }
 
 
