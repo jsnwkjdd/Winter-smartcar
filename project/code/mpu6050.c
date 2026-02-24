@@ -2,9 +2,10 @@
 #include "zf_driver_soft_iic.h"
 #include <math.h>
 #include "zf_common_headfile.h"
+#include "bluetooth.h"
 
  
-float t=0.01,zero=7,A_ration=0.04,AlphaPitch = 0.025;//t角速度积分，和定时中断同步/zero机械零点/
+float t=0.01,zero=0,A_ration=0.04,AlphaPitch = 0.02;//t角速度积分，和定时中断同步/zero机械零点/
 
 extern soft_iic_info_struct mpu6050_iic_struct;
 float AlphaX = 0.001;//互补滤波参数
@@ -89,9 +90,9 @@ void mpu6050estimation_Pitch(float*Pitch)
     last_gyro_y_raw = mpu6050_gyro_y;
 
     // 5. 原有解算逻辑（不变）
-    ax=mpu6050_acc_x-15;
-    az=mpu6050_acc_z-20;
-    gy=mpu6050_gyro_y+6;
+    ax=mpu6050_acc_x+15;
+    az=mpu6050_acc_z+191;
+    gy=mpu6050_gyro_y+7;
 
     acc_x = mpu6050_acc_transition(ax);
     acc_z = mpu6050_acc_transition(az);
@@ -100,7 +101,7 @@ void mpu6050estimation_Pitch(float*Pitch)
     // 简化滤波
     acc_x = 0.9 * acc_x + 0.1 * last_acc_x;
     acc_z = 0.9 * acc_z + 0.1 * last_acc_z;
-    gyro_y = 0.83 * gyro_y + 0.17 * last_gyro_y;
+    gyro_y = 0.9 * gyro_y + 0.17 * last_gyro_y;
     last_acc_x = acc_x;
     last_acc_z = acc_z;
     last_gyro_y = gyro_y;
@@ -117,14 +118,8 @@ void mpu6050estimation_Pitch(float*Pitch)
         AngleY=AY;
     }
 
-    *Pitch=-AngleY+zero;
-		printf("[plot,%d]",gy);//1
-		
-//		printf("[plot,%f,%f]",-AY,Pitch);//2
-		
-//		printf("[plot,%f,%f,%f]",-AY,*Pitch,-GY);//3
-	
-//		printf("[plot,%f,%f]",-atan2(ax1,az1)* 180.0f / 3.14159265f,Pitch);//4
+    *Pitch=-AngleY+zero+0.9;
+
 }
 
 

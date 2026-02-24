@@ -212,5 +212,14 @@ int main(void)
         menu_save();       // 菜单保存
         mode5(&SpeedPID,&TurnPID);  // 模式控制
         tft180_show_float(0, 90, -Pitch, 2, 2);  // 屏幕显示角度
+		
+//		printf("[plot,%d]",az);//1
+		
+//		printf("[plot,%f,%f]",-AY,Pitch);//2
+		
+		printf("[plot,%f,%f,%f]",-AY,Pitch,-GY);//3
+	
+//		printf("[plot,%f,%f]",-atan2(ax1,az1)* 180.0f / 3.14159265f,Pitch);//4
+		system_delay_ms(50);
     }
 }
