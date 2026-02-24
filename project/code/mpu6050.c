@@ -118,12 +118,12 @@ void mpu6050estimation_Pitch(float*Pitch)
     }
 
     *Pitch=-AngleY+zero;
-//		printf("[plot,%d]",az	);//1
+		printf("[plot,%d]",gy);//1
 		
 //		printf("[plot,%f,%f]",-AY,Pitch);//2
 		
-		printf("[plot,%f,%f,%f]",-AY,*Pitch,-GY);//3
-//		
+//		printf("[plot,%f,%f,%f]",-AY,*Pitch,-GY);//3
+	
 //		printf("[plot,%f,%f]",-atan2(ax1,az1)* 180.0f / 3.14159265f,Pitch);//4
 }
 
