@@ -74,7 +74,7 @@ int16_t AveSpeed, DifSpeed;
 extern float AngleY;
 
 PID_t wPID = {
-	.Kp = 0,
+	.Kp = -0.1,
 	.Ki = 0,
 	.Kd = 0,
 	.Target=0,
@@ -86,7 +86,7 @@ PID_t wPID = {
 PID_t AnglePID = {
 	.Kp = 0,
 	.Ki = 0,
-	.Kd = 2,
+	.Kd = -0.2,
 	.Target=0,
 	.OutMax = 100,
 	.OutMin = -100,
@@ -125,11 +125,11 @@ int main(void)
 	PID_Init(&SpeedPID);
 	PID_Init(&TurnPID);
 	PID_Init(&wPID);
-//	Motor_SetSpeedleft(0);
-//	Motor_SetSpeedright(0);
+	Motor_SetSpeedleft(0);
+	Motor_SetSpeedright(0);
 // 设置 PIT 对周期中断的中断优先级为 0
-	Motor_SetSpeedright(9000);
-	Motor_SetSpeedleft(9000);
+//	Motor_SetSpeedright(9000);
+//	Motor_SetSpeedleft(9000);
     while(1)
     {
 		system_delay_ms(8);
@@ -138,7 +138,7 @@ int main(void)
 		
 //		printf("[plot,%f,%f]",-AY,Pitch);//2
 		
-		printf("[plot,%f,%f,%f]",-AY,Pitch,-GY);//3
+//		printf("[plot,%f,%f,%f]",-AY,Pitch,-GY);//3
 //		
 //		printf("[plot,%f,%f]",-atan2(ax1,az1)* 180.0f / 3.14159265f,Pitch);//4
 		
@@ -163,6 +163,7 @@ int main(void)
 		soft_iic_init(&mpu6050_iic_struct, MPU6050_DEV_ADDR, MPU6050_SOFT_IIC_DELAY, MPU6050_SCL_PIN, MPU6050_SDA_PIN);
 		mpu6050_get_acc(); //读取加速度计初始数据
 		mpu6050_get_gyro(); //读取角速度计初始数据 
+//		printf("[plot,%d]",az	);//1
     }
 }
 // **************************** 代码区域 ****************************
@@ -193,14 +194,15 @@ void pit_handler (void)
 //		//===角速度环
 		
 		wPID.Actual=gyro_y1;
+		wPID.Target =	AnglePID.Out;
 		PID_Update(&wPID);
 		AvePWM = -wPID.Out;
 		LeftPWM = AvePWM+DifPWM/2;
 		RightPWM = AvePWM-DifPWM/2;
 		if (LeftPWM > 100) {LeftPWM = 100;} else if (LeftPWM < -100) {LeftPWM = -100;}
 		if (RightPWM > 100) {RightPWM = 100;} else if (RightPWM < -100) {RightPWM = -100;}
-		Motor_SetSpeedleft(LeftPWM*100);
-		Motor_SetSpeedright(RightPWM*100);
+		Motor_SetSpeedleft(LeftPWM*400);
+		Motor_SetSpeedright(RightPWM*400);
 		cnt=0;
 //		//===fin
 	}
@@ -208,9 +210,10 @@ void pit_handler (void)
 		cnt1=0;
 		AnglePID.Actual = Pitch;			//角度环pid
 		PID_Update(&AnglePID);
+		AnglePID.Target=SpeedPID.Out;
 
 //	===角速度环
-		wPID.Target =	AnglePID.Out;	
+//		wPID.Target =	AnglePID.Out;	
 		
 //		AvePWM = -AnglePID.Out;
 //		LeftPWM = AvePWM+DifPWM/2;
@@ -231,7 +234,7 @@ void pit_handler (void)
 		DifSpeed=LeftSpeed-RightSpeed;
 		SpeedPID.Actual=AveSpeed;
 		PID_Update(&SpeedPID);
-		AnglePID.Target=SpeedPID.Out;
+//		AnglePID.Target=SpeedPID.Out;
 		
 		TurnPID.Actual=DifSpeed;
 		PID_Update(&TurnPID);

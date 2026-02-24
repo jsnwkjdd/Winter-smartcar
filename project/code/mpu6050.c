@@ -33,9 +33,9 @@ void mpu6050estimation_Pitch(float*Pitch)
 //	mpu6050_acc_x-=80;
 //	mpu6050_acc_z-=20;
 //	mpu6050_gyro_y-=0;
-	ax=mpu6050_acc_x-240-170;
+	ax=mpu6050_acc_x-15;
 	az=mpu6050_acc_z-20;
-	gy=mpu6050_gyro_y+85;
+	gy=mpu6050_gyro_y+6;
 
 	
 	//限幅滤波
