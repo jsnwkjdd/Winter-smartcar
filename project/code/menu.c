@@ -106,7 +106,7 @@ void menu_key(void)
                 else if(hang==6) SpeedPID.Kp+=0.1;
 				else if(hang==7) wPID.Ki+=0.01;
                 else if(hang==8) wPID.Kd+=0.1;
-                else if(hang==9) wPID.Kp+=0.1;
+                else if(hang==9) wPID.Kp+=0.01;
             }	
         }
     }
@@ -137,7 +137,7 @@ void menu_key(void)
                 else if(hang==6) SpeedPID.Kp-=0.1;
 				else if(hang==7) wPID.Ki-=0.01;
                 else if(hang==8) wPID.Kd-=0.1;
-                else if(hang==9) wPID.Kp-=0.1;
+                else if(hang==9) wPID.Kp-=0.01;
             }	
         }
     }

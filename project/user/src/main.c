@@ -57,7 +57,7 @@
 #define DEG_TO_RAD 0.017453292519943295f  // π/180
 #define RAD_TO_DEG 57.29577951308232f     // 180/π  
 
-
+extern soft_iic_info_struct mpu6050_iic_struct;
 extern int16_t ax,az,gy,flag_mpu;//互补滤波中间量
 extern int16_t acc_xbias,acc_ybias,acc_zbias,gyro_xbias,gyro_ybias,gyro_zbias;//零飘校准
 extern float gyro_y1,gyro_x,gyro_y,gyro_z,acc_x,acc_y,acc_z,AX,AY,AZ,GX,GY,GZ,AngleX,AngleY,AngleZ;;//数据处理中间量
@@ -74,7 +74,7 @@ int16_t AveSpeed, DifSpeed;
 extern float AngleY;
 
 PID_t wPID = {
-	.Kp = -0.2,
+	.Kp = 0,
 	.Ki = 0,
 	.Kd = 0,
 	.Target=0,
@@ -84,7 +84,7 @@ PID_t wPID = {
 
 
 PID_t AnglePID = {
-	.Kp = 7,
+	.Kp = 0,
 	.Ki = 0,
 	.Kd = 2,
 	.Target=0,
@@ -128,8 +128,8 @@ int main(void)
 //	Motor_SetSpeedleft(0);
 //	Motor_SetSpeedright(0);
 // 设置 PIT 对周期中断的中断优先级为 0
-//    Motor_SetSpeedright(1000);
-//	Motor_SetSpeedleft(1000);
+	Motor_SetSpeedright(9000);
+	Motor_SetSpeedleft(9000);
     while(1)
     {
 		system_delay_ms(8);
@@ -150,6 +150,7 @@ int main(void)
 //		tft180_show_float(0, 100,mpu6050_gyro_y , 2,2); 
 //		tft180_show_float(0, 110,mpu6050_acc_x , 2,2); 
 //		tft180_show_float(0, 120,mpu6050_acc_z , 2,2);
+		
 
 
 //		menu_save();
