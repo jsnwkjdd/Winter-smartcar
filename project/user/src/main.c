@@ -34,6 +34,8 @@
 ********************************************************************************************************************/
 
 #include "zf_common_headfile.h"
+#include "zf_driver_soft_iic.h"
+#include "zf_device_mpu6050.h"
 #include "Encoder.h"
 #include "bluetooth.h"
 #include "mpu6050.h"
@@ -46,6 +48,8 @@
 #include <stdint.h>
 #include "mode5.h"
 
+
+extern soft_iic_info_struct mpu6050_iic_struct;
 extern int16_t acc_xbias,acc_ybias,acc_zbias,gyro_xbias,gyro_ybias,gyro_zbias;//零飘校准
 extern float gyro_x,gyro_y,gyro_z,acc_x,acc_y,acc_z;//数据处理中间量
 float Pitch;
@@ -91,19 +95,19 @@ int main(void)
     debug_init();                                                               // 初始化默认 Debug UART
 //	pit_ms_init(PIT, 1);                                                      // 初始化 PIT（TIM6_PIT） 为周期中断 1ms 周期
 	interrupt_set_priority(PIT_PRIORITY, 0);
-	bluetooth_ch9141_init();
-	Motor_Init();
+//	bluetooth_ch9141_init();
+//	Motor_Init();
 	mpu6050_init();
-	my_key_init();
-	timer_key();
-	menu_init();
+//	my_key_init();
+//	timer_key();
+//	menu_init();
 //	menu_load();
-	Pitch=0;
-	Encoder_Init();
-	PID_Init(&AnglePID);
-	PID_Init(&SpeedPID);
-	PID_Init(&TurnPID);
-	bluetooth_ch9141_init();
+//	Pitch=0;
+//	Encoder_Init();
+//	PID_Init(&AnglePID);
+//	PID_Init(&SpeedPID);
+//	PID_Init(&TurnPID);
+//	bluetooth_ch9141_init();
 //	Motor_SetSpeedleft(0);
 //	Motor_SetSpeedright(0);
 	// 设置 PIT 对周期中断的中断优先级为 0
@@ -114,14 +118,15 @@ int main(void)
     while(1)
     {
 		//printf("%f\n",Pitch);
-		menu_save();
-		menu_key();
+//		menu_save();
+//		menu_key();
 //		menu_save();     
 //		printf("[plot,%f]",-Pitch-2);
 //		tft180_show_int(50, 90,AnglePID.Target , 3);
-		tft180_show_float(0, 90,-Pitch , 2,2);
+//		tft180_show_float(0, 90,-Pitch , 2,2);
 //		tft180_show_float(0, 140,encoderleft , 3,2);
 //		tft180_show_float(0, 150,encoderright, 3,2);
+		soft_iic_init(&mpu6050_iic_struct, MPU6050_DEV_ADDR, MPU6050_SOFT_IIC_DELAY, MPU6050_SCL_PIN, MPU6050_SDA_PIN);
 		mpu6050_get_acc(); //读取加速度计初始数据
 		mpu6050_get_gyro(); //读取角速度计初始数据 
 		tft180_show_float(0, 100,mpu6050_gyro_y , 2,2); 

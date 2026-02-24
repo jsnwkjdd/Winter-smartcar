@@ -64,7 +64,7 @@ int16 mpu6050_gyro_x = 0, mpu6050_gyro_y = 0, mpu6050_gyro_z = 0;               
 int16 mpu6050_acc_x = 0, mpu6050_acc_y = 0, mpu6050_acc_z = 0;                  // 三轴加速度计数据    acc (accelerometer 加速度计)
 
 #if MPU6050_USE_SOFT_IIC
-static soft_iic_info_struct mpu6050_iic_struct;
+soft_iic_info_struct mpu6050_iic_struct;
 
 #define mpu6050_write_register(reg, data)       (soft_iic_write_8bit_register(&mpu6050_iic_struct, (reg), (data)))
 #define mpu6050_read_register(reg)              (soft_iic_read_8bit_register(&mpu6050_iic_struct, (reg)))
