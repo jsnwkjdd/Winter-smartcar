@@ -12,7 +12,7 @@ void my_key_init(void)
 void timer_key(void)
 {
 	pit_ms_init(TIM2_PIT, 100); 
-	interrupt_set_priority(TIM2_IRQn, 0);	
+	interrupt_set_priority(TIM2_IRQn, 3);	
 }
 
 // 扫描按键

@@ -137,7 +137,7 @@ int main(void)
     
     // 先初始化菜单/按键（避免后续抢引脚）
     my_key_init();
-    // timer_key();  // 核心：屏蔽TIM2按键中断，避免中断抢占IIC
+    timer_key();  // 核心：屏蔽TIM2按键中断，避免中断抢占IIC
     menu_init();
     // menu_load();
     
