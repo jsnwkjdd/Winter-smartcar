@@ -57,6 +57,8 @@
 #define DEG_TO_RAD 0.017453292519943295f  // π/180
 #define RAD_TO_DEG 57.29577951308232f     // 180/π  
 
+volatile uint16_t pit_cnt = 0;
+
 extern soft_iic_info_struct mpu6050_iic_struct;
 extern int16_t ax,az,gy,flag_mpu;//互补滤波中间量
 extern int16_t acc_xbias,acc_ybias,acc_zbias,gyro_xbias,gyro_ybias,gyro_zbias;//零飘校准
@@ -106,63 +108,85 @@ PID_t TurnPID = {
 	.OutMax = 50,
 	.OutMin = -50,
 };
+
+// 系统毫秒级时间函数（适配逐飞库，无中断保护，不卡死）
+uint32_t system_get_time_ms(void)
+{
+    // 声明pit_cnt为外部变量（TIM6中断里的计数变量）
+    extern volatile uint16_t pit_cnt;
+    static uint32_t ms_count = 0;
+    static uint16_t pit_last = 0;
+    
+    // 直接判断计数，不加中断保护（避免锁死PIT中断）
+    if(pit_cnt - pit_last >= 1) 
+    {
+        ms_count += (pit_cnt - pit_last);
+        pit_last = pit_cnt;
+    }
+    return ms_count;
+}
+
 // **************************** 代码区域 ****************************
 int main(void)
 {
+    // ===================== 核心修改1：调整初始化顺序 - MPU最后初始化 =====================
     clock_init(SYSTEM_CLOCK_120M);                                              // 初始化芯片时钟 工作频率为 120MHz
     debug_init();                                                               // 初始化默认 Debug UART
-	pit_ms_init(PIT, 1);                                                      // 初始化 PIT（TIM6_PIT） 为周期中断 1ms 周期
-	interrupt_set_priority(PIT_PRIORITY, 0);
-	my_key_init();
-	timer_key();
-	menu_init();
-//	menu_load();
-	bluetooth_ch9141_init();
-	Encoder_Init();
-	Motor_Init();
-	mpu6050_init();
-	PID_Init(&AnglePID);
-	PID_Init(&SpeedPID);
-	PID_Init(&TurnPID);
-	PID_Init(&wPID);
-//	Motor_SetSpeedleft(0);
-//	Motor_SetSpeedright(0);
-// 设置 PIT 对周期中断的中断优先级为 0
-	Motor_SetSpeedright(9000);
-	Motor_SetSpeedleft(9000);
+    pit_ms_init(PIT, 1);                                                        // 初始化 PIT（TIM6_PIT） 为周期中断 1ms 周期
+    interrupt_set_priority(PIT_PRIORITY, 0);
+    
+    // 先初始化菜单/按键（避免后续抢引脚）
+    my_key_init();
+    // timer_key();  // 核心：屏蔽TIM2按键中断，避免中断抢占IIC
+    menu_init();
+    // menu_load();
+    
+    // 初始化其他外设
+    bluetooth_ch9141_init();
+    Encoder_Init();
+    Motor_Init();
+    PID_Init(&AnglePID);
+    PID_Init(&SpeedPID);
+    PID_Init(&TurnPID);
+    PID_Init(&wPID);
+    
+    // ===================== 核心修改2：MPU6050最后初始化，避免被其他外设抢占资源 =====================
+    mpu6050_init();
+    
+    // ===================== 核心修改3：初始化完成锁 + 延时稳定 =====================
+    uint8_t system_init_ok = 0;
+    system_delay_ms(200);  // 给MPU足够的初始化时间，避免断言
+    system_init_ok = 1;    // 初始化完成，允许运行菜单代码
+
     while(1)
     {
-		system_delay_ms(8);
-		//===互补
-//		printf("[plot,%d]",az	);//1
-		
-//		printf("[plot,%f,%f]",-AY,Pitch);//2
-		
-//		printf("[plot,%f,%f,%f]",-AY,Pitch,-GY);//3
-		
-//		printf("[plot,%f,%f]",-atan2(ax1,az1)* 180.0f / 3.14159265f,Pitch);//4
-		
-		//====fin
-//		tft180_show_int(50, 90,AnglePID.Target , 3);
-		tft180_show_float(0, 90,-Pitch , 2,2);
-//		tft180_show_float(0, 140,encoderleft , 3,2);
-//		tft180_show_float(0, 150,encoderright, 3,2);
-//		tft180_show_float(0, 100,mpu6050_gyro_y , 2,2); 
-//		tft180_show_float(0, 110,mpu6050_acc_x , 2,2); 
-//		tft180_show_float(0, 120,mpu6050_acc_z , 2,2);
-		
+        // 1. 优先读取MPU数据（核心，不能被挤占）
+        mpu6050_get_acc(); //读取加速度计初始数据
+        mpu6050_get_gyro(); //读取角速度计初始数据 
 
+        // 2. 核心：仅初始化完成后，低频处理菜单/按键（50ms一次，避免抢占IIC）
+        static uint32_t last_menu_time = 0;
+        if(system_init_ok && (system_get_time_ms() - last_menu_time >= 50))
+        {
+//            menu_save();   // 低频保存参数
+            menu_key();    // 低频处理按键
+            last_menu_time = system_get_time_ms(); // 更新时间戳
+        }
 
-		menu_save();
-		menu_key();
-//		menu_save();
-		mode5(&SpeedPID,&TurnPID);
-//		Motor_SetSpeedright(1000);
-//		Motor_SetSpeedleft(1000);
+        // 3. 姿态解算相关打印（保留你的原有代码）
+        // printf("[plot,%d]",az	);//1
+        // printf("[plot,%f,%f]",-AY,Pitch);//2
+        // printf("[plot,%f,%f,%f]",-AY,Pitch,-GY);//3
+        // printf("[plot,%f,%f]",-atan2(ax1,az1)* 180.0f / 3.14159265f,Pitch);//4
 
-//		soft_iic_init(&mpu6050_iic_struct, MPU6050_DEV_ADDR, MPU6050_SOFT_IIC_DELAY, MPU6050_SCL_PIN, MPU6050_SDA_PIN);
-		mpu6050_get_acc(); //读取加速度计初始数据
-		mpu6050_get_gyro(); //读取角速度计初始数据 
+        // 4. 屏幕只显示核心角度，减少刷屏
+        tft180_show_float(0, 90,-Pitch , 2,2);
+
+        // 5. 调用mode5，保留原有逻辑
+        mode5(&SpeedPID,&TurnPID);
+
+        // 6. 短延时，避免空转（从8ms减到1ms，减少延迟）
+        system_delay_ms(1);
     }
 }
 // **************************** 代码区域 ****************************
