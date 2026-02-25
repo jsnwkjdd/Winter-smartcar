@@ -189,7 +189,7 @@ int main(void)
 		{
 			// 这里随便 printf
 			// 3. 姿态解算相关打印（保留你的原有代码）
-			 printf("[plot,%d]",gy);//1
+//			 printf("[plot,%d]",ax);//1
 //			 printf("[plot,%f,%f]",-AY,Pitch);//2
 //			 printf("[plot,%f,%f,%f]",-AY,Pitch,-GY);//3
 //			 printf("[plot,%f,%f]",-atan2(ax1,az1)* 180.0f / 3.14159265f,Pitch);//4
