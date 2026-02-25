@@ -59,6 +59,10 @@
 
 volatile uint16_t pit_cnt = 0;
 
+// 新增：10ms MPU读取控制标志
+volatile uint8_t mpu_10ms_flag = 0;
+volatile uint32_t mpu_10ms_cnt = 0;
+
 extern soft_iic_info_struct mpu6050_iic_struct;
 extern int16_t ax,az,gy,flag_mpu;//互补滤波中间量
 extern int16_t acc_xbias,acc_ybias,acc_zbias,gyro_xbias,gyro_ybias,gyro_zbias;//零飘校准
@@ -170,15 +174,22 @@ int main(void)
 
     while(1)
     {
-        // 1. 优先读取MPU数据（核心，不能被挤占）
-        mpu6050_get_acc(); //读取加速度计初始数据
-        mpu6050_get_gyro(); //读取角速度计初始数据 
+        if(mpu_10ms_flag)
+		{
+			mpu_10ms_flag = 0;
 
+			// 10ms 读一次
+			mpu6050_get_acc();
+			mpu6050_get_gyro();
+
+			// 姿态解算
+			mpu6050estimation_Pitch(&Pitch);
+		}
         // 2. 核心：仅初始化完成后，低频处理菜单/按键（50ms一次，避免抢占IIC）
         static uint32_t last_menu_time = 0;
         if(system_init_ok && (system_get_time_ms() - last_menu_time >= 50))
         {
-//            menu_save();   // 低频保存参数
+//          menu_save();   // 低频保存参数
             menu_key();    // 低频处理按键
             last_menu_time = system_get_time_ms(); // 更新时间戳
         }
@@ -197,8 +208,7 @@ int main(void)
 			last_print_time = system_get_time_ms();
 		}
 
-        // 4. 屏幕只显示核心角度，减少刷屏
-        tft180_show_float(0, 90,-Pitch , 2,2);
+		tft180_show_float(0, 90,-Pitch , 2,2); // 显示最新Pitch
 
         // 5. 调用mode5，保留原有逻辑
         mode5(&SpeedPID,&TurnPID);
@@ -218,22 +228,19 @@ int cnt3=0;
 void pit_handler (void)
 {	
 	flag_mpu--;
-	cnt++;
+	mpu_10ms_cnt++;  // 1ms 计数
 	cnt1++;
 	cnt2++;
 	cnt3++;
-	if(cnt==10)
-	{
-		mpu6050estimation_Pitch(&Pitch);  //姿态解算A
+	
+	// ========== 核心修改：10ms读取一次MPU6050 + 姿态解算 ==========
+	if(mpu_10ms_cnt >= 10)  // 10ms 到
+    {
+        mpu_10ms_cnt = 0;
+        mpu_10ms_flag = 1; // 只打标，不读MPU！
+    
 		
-		
-//		pre_mahony();						//B
-//		MahonyAHRSupdateIMU2(gx1*DEG_TO_RAD,gy1*DEG_TO_RAD,gz1*DEG_TO_RAD,ax1,ay1,az1);
-//		get_angles_from_quaternion(q0,q1,q2,q3,&Roll,&Pitch,&Yaw);
-		
-		
-//		//===角速度环
-		
+		// 3. 角速度环PID（原有逻辑）
 		wPID.Actual=gyro_y1;
 		PID_Update(&wPID);
 		AvePWM = -wPID.Out;
@@ -243,31 +250,20 @@ void pit_handler (void)
 		if (RightPWM > 100) {RightPWM = 100;} else if (RightPWM < -100) {RightPWM = -100;}
 		Motor_SetSpeedleft(LeftPWM*100);
 		Motor_SetSpeedright(RightPWM*100);
-		cnt=0;
-//		//===fin
+		
 	}
+	
+	// 以下原有逻辑保留，仅调整计数变量（删除原有cnt，改用mpu_read_cnt）
 	if(cnt1==20){
 		cnt1=0;
 		AnglePID.Actual = Pitch;			//角度环pid
 		PID_Update(&AnglePID);
-
-//	===角速度环
 		wPID.Target =	AnglePID.Out;	
-		
-//		AvePWM = -AnglePID.Out;
-//		LeftPWM = AvePWM+DifPWM/2;
-//		RightPWM = AvePWM-DifPWM/2;
-//		if (LeftPWM > 100) {LeftPWM = 100;} else if (LeftPWM < -100) {LeftPWM = -100;}
-//		if (RightPWM > 100) {RightPWM = 100;} else if (RightPWM < -100) {RightPWM = -100;}
-//		Motor_SetSpeedleft(LeftPWM*100);
-//		Motor_SetSpeedright(RightPWM*100);
-		
-		
 	}
 	if(cnt2==50)//速度环pid && 角度环pid
 	{
 		cnt2=0;
-		LeftSpeed = Get_Encoder_Data_Left()/13.0/34/0.05;	//公式：编码器值/一圈计数值/减速比/周期（单位：转/秒）  
+		LeftSpeed = Get_Encoder_Data_Left()/13.0/34/0.05;	
 		RightSpeed = Get_Encoder_Data_Right()/13.0/34/0.05;
 		AveSpeed=(LeftSpeed+RightSpeed)/2.0;
 		DifSpeed=LeftSpeed-RightSpeed;
@@ -279,9 +275,8 @@ void pit_handler (void)
 		PID_Update(&TurnPID);
 		DifPWM=TurnPID.Out;
 	}	
-//公式：编码器值/一圈计数值/减速比/周期（单位：转/秒）  
 	if(cnt3==50){
-	    encoder_clear_count(ENCODER_QUADDEC_L);                                       // 清空编码器计数
+	    encoder_clear_count(ENCODER_QUADDEC_L);                                       
 	    encoder_clear_count(ENCODER_QUADDEC_R);
 		cnt3=0;		
 	}
