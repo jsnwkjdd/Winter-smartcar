@@ -138,8 +138,8 @@ int main(void)
 		
 //		printf("[plot,%f,%f]",-AY,Pitch);//2
 		
-		printf("[plot,%f,%f,%f]",-AY,Pitch,-GY);//3
-//		
+//		printf("[plot,%f,%f,%f]",-AY,Pitch,-GY);//3
+		
 //		printf("[plot,%f,%f]",-atan2(ax1,az1)* 180.0f / 3.14159265f,Pitch);//4
 		
 		//====fin
@@ -153,9 +153,9 @@ int main(void)
 		
 
 
-//		menu_save();
-		menu_key();
 		menu_save();
+		menu_key();
+//		menu_save();
 		mode5(&SpeedPID,&TurnPID);
 //		Motor_SetSpeedright(1000);
 //		Motor_SetSpeedleft(1000);
