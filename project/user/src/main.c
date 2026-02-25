@@ -160,9 +160,9 @@ int main(void)
 //		Motor_SetSpeedright(1000);
 //		Motor_SetSpeedleft(1000);
 
-		soft_iic_init(&mpu6050_iic_struct, MPU6050_DEV_ADDR, MPU6050_SOFT_IIC_DELAY, MPU6050_SCL_PIN, MPU6050_SDA_PIN);
-		mpu6050_get_acc(); //读取加速度计初始数据
-		mpu6050_get_gyro(); //读取角速度计初始数据 
+//		soft_iic_init(&mpu6050_iic_struct, MPU6050_DEV_ADDR, MPU6050_SOFT_IIC_DELAY, MPU6050_SCL_PIN, MPU6050_SDA_PIN);
+//		mpu6050_get_acc(); //读取加速度计初始数据
+//		mpu6050_get_gyro(); //读取角速度计初始数据 
     }
 }
 // **************************** 代码区域 ****************************

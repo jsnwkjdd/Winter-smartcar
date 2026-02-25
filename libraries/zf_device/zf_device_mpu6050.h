@@ -57,7 +57,7 @@
 
 #include "zf_common_typedef.h"
 
-#define MPU6050_USE_SOFT_IIC        ( 1 )                                       // 默认使用软件 IIC 方式驱动 建议使用软件 IIC 方式
+#define MPU6050_USE_SOFT_IIC        ( 0 )                                       // 默认使用软件 IIC 方式驱动 建议使用软件 IIC 方式
 #if MPU6050_USE_SOFT_IIC                                                        // 这两段 颜色正常的才是正确的 颜色灰的就是没有用的
 //====================================================软件 IIC 驱动====================================================
 #define MPU6050_SOFT_IIC_DELAY      ( 10  )                                     // 软件 IIC 的时钟延时周期 数值越小 IIC 通信速率越快
@@ -67,9 +67,17 @@
 #else
 //====================================================硬件 IIC 驱动====================================================
 #define MPU6050_IIC_SPEED           ( 400 * 1000  )                             // 硬件 IIC 通信速率 最高 400KHz 不建议低于 40KHz
-#define MPU6050_IIC                 ( IIC_1       )                             // 硬件 IIC SCL 引脚 连接 MPU6050 的 SCL 引脚
-#define MPU6050_SCL_PIN             ( IIC1_SCL_B6 )                               // 硬件 IIC SCL 引脚 连接 MPU6050 的 SCL 引脚
-#define MPU6050_SDA_PIN             ( IIC1_SDA_B7 )                               // 硬件 IIC SDA 引脚 连接 MPU6050 的 SDA 引脚
+//#define MPU6050_IIC                 ( IIC_1       )                             // 硬件 IIC SCL 引脚 连接 MPU6050 的 SCL 引脚
+//#define MPU6050_SCL_PIN             ( IIC1_SCL_B6 )                               // 硬件 IIC SCL 引脚 连接 MPU6050 的 SCL 引脚
+//#define MPU6050_SDA_PIN             ( IIC1_SDA_B7 )                               // 硬件 IIC SDA 引脚 连接 MPU6050 的 SDA 引脚
+
+
+ #define MPU6050_IIC               ( IIC_2 )
+ #define MPU6050_SCL_PIN           ( IIC2_SCL_B10 )
+ #define MPU6050_SDA_PIN           ( IIC2_SDA_B11 )
+
+
+
 //====================================================硬件 IIC 驱动====================================================
 #endif
 
