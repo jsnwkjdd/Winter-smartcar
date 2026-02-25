@@ -109,20 +109,30 @@ PID_t TurnPID = {
 	.OutMin = -50,
 };
 
-// 系统毫秒级时间函数（适配逐飞库，无中断保护，不卡死）
+// 系统毫秒级时间函数（适配逐飞库，解决uint16_t溢出问题，永不卡死）
 uint32_t system_get_time_ms(void)
 {
-    // 声明pit_cnt为外部变量（TIM6中断里的计数变量）
+    // 声明pit_cnt为外部变量（TIM6中断里的1ms计数变量）
     extern volatile uint16_t pit_cnt;
-    static uint32_t ms_count = 0;
+    static uint32_t ms_count = 0;    // 用32位存总毫秒数，不会溢出
     static uint16_t pit_last = 0;
     
-    // 直接判断计数，不加中断保护（避免锁死PIT中断）
-    if(pit_cnt - pit_last >= 1) 
+    // 核心：处理pit_cnt的16位溢出（归零）情况
+    uint16_t pit_current = pit_cnt;  // 先读当前值，避免中断中被修改
+    
+    // 情况1：正常计数（没有溢出）
+    if(pit_current >= pit_last)
     {
-        ms_count += (pit_cnt - pit_last);
-        pit_last = pit_cnt;
+        ms_count += (pit_current - pit_last);
     }
+    // 情况2：pit_cnt溢出归零（比如从65535→0）
+    else
+    {
+        // 先加：从last到65535的差值 + 从0到current的差值
+        ms_count += (65535 - pit_last + 1 + pit_current);
+    }
+    pit_last = pit_current;  // 更新上次值
+    
     return ms_count;
 }
 
@@ -137,7 +147,7 @@ int main(void)
     
     // 先初始化菜单/按键（避免后续抢引脚）
     my_key_init();
-    timer_key();  // 核心：屏蔽TIM2按键中断，避免中断抢占IIC
+    timer_key();  // 开启按键中断（已调低优先级，不抢占IIC）
     menu_init();
     // menu_load();
     
@@ -172,12 +182,20 @@ int main(void)
             menu_key();    // 低频处理按键
             last_menu_time = system_get_time_ms(); // 更新时间戳
         }
+		
+		// ✅ 【唯一安全的printf位置】
+		static uint32_t last_print_time = 0;
+		if(system_get_time_ms() - last_print_time >= 100)  // 100ms 打一次
+		{
+			// 这里随便 printf
+			// 3. 姿态解算相关打印（保留你的原有代码）
+			 printf("[plot,%d]",gy);//1
+//			 printf("[plot,%f,%f]",-AY,Pitch);//2
+//			 printf("[plot,%f,%f,%f]",-AY,Pitch,-GY);//3
+//			 printf("[plot,%f,%f]",-atan2(ax1,az1)* 180.0f / 3.14159265f,Pitch);//4
 
-        // 3. 姿态解算相关打印（保留你的原有代码）
-        // printf("[plot,%d]",az	);//1
-        // printf("[plot,%f,%f]",-AY,Pitch);//2
-        // printf("[plot,%f,%f,%f]",-AY,Pitch,-GY);//3
-        // printf("[plot,%f,%f]",-atan2(ax1,az1)* 180.0f / 3.14159265f,Pitch);//4
+			last_print_time = system_get_time_ms();
+		}
 
         // 4. 屏幕只显示核心角度，减少刷屏
         tft180_show_float(0, 90,-Pitch , 2,2);
