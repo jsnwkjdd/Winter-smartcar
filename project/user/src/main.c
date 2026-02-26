@@ -81,44 +81,40 @@ int16_t AvePWM, DifPWM=0;
 int16_t AveSpeed, DifSpeed;
 extern float AngleY;
 
-// ===================== PID参数（最终稳定版：单环角度PID+角速度阻尼）=====================
-// 角速度阻尼（保留你最完美的参数，只负责消抖，不做主环）
+// ===================== PID参数（优化后，不抖）=====================
 PID_t wPID = {
-	.Kp =-0.003,
+	.Kp =-0.005,
 	.Ki = 0,
 	.Kd = 0.0008,
 	.Target=0,
-	.OutMax = 20,    // 缩小阻尼输出范围，避免干扰
-	.OutMin = -20,
+	.OutMax = 80,    
+	.OutMin = -80,
 };
 
-// 角度环（直接控电机，够力、不抖、不漂移）
 PID_t AnglePID = {
-	.Kp = -1.8,        // 核心：加大角度环力度，直接扶车
+	.Kp = -4,        
 	.Ki = 0,
-	.Kd = 0.3,         // 加大微分消抖
+	.Kd = 0.5,         
 	.Target=0,
-	.OutMax = 50,   
-	.OutMin = -50,
+	.OutMax = 80,   
+	.OutMin = -80,
 };
 
-// 速度环（暂时关闭，避免干扰平衡）
 PID_t SpeedPID = {
 	.Kp = 0,
 	.Ki = 0,
 	.Kd = 0,
-	.OutMax = 0,    
-	.OutMin = 0,
+	.OutMax = 18,    // 缩小速度环输出范围
+	.OutMin = -18,
 	.Target=0,
 };
 
-// 转向环（暂时关闭，先站稳）
 PID_t TurnPID = {
 	.Kp = 0,
 	.Ki = 0,
 	.Kd = 0,
-	.OutMax = 0,
-	.OutMin = 0,
+	.OutMax = 30,
+	.OutMin = -30,
 };
 
 // 系统毫秒级时间函数（适配逐飞库）
@@ -186,6 +182,11 @@ int main(void)
         if(mpu_10ms_flag && system_init_ok)
         {
             mpu_10ms_flag = 0;
+//            // 读MPU数据
+//            mpu6050_get_acc();
+//            mpu6050_get_gyro();
+//            // 姿态解算（稳定执行）
+//            mpu6050estimation_Pitch(&Pitch);
         }
 
         // ========== 低频处理菜单/按键（50ms一次，不卡）==========
@@ -210,7 +211,7 @@ int main(void)
     }
 }
 
-// ===================== PIT中断函数（核心修改：单环角度PID直接控电机）=====================
+// ===================== PIT中断函数（重构执行逻辑）=====================
 int cnt1=0,cnt2=0,cnt3=0;
 void pit_handler (void)
 {	
@@ -221,10 +222,11 @@ void pit_handler (void)
 	cnt2++;
 	cnt3++;
 	
-	// ========== 1. 10ms姿态解算 ==========
+	// ========== 1. 10ms标记 ==========
 	if(mpu_10ms_cnt >= 10)
     {
         mpu_10ms_cnt = 0;
+		mpu_10ms_flag = 0;
 		// 读MPU数据
 		mpu6050_get_acc();
 		mpu6050_get_gyro();
@@ -233,46 +235,68 @@ void pit_handler (void)
         mpu_10ms_flag = 1;
     }
 
-    // 10ms 控制
+    // ========== 10ms执行角度环+角速度环 ==========
 	if(cnt1>=10 && system_init_ok)
 	{
 		cnt1=0;
-
-		// 角度环
+		// 角度环：用Pitch和目标值对比（姿态解算数据纯纯的，不被修改）
 		AnglePID.Actual = Pitch;
 		PID_Update(&AnglePID);
-
-		// 串级：角度环输出 → 角速度环目标
-		wPID.Target = AnglePID.Out * 6;   // 放大 6 倍，温和
+		// 角速度环：目标值=角度环输出
+		wPID.Target = AnglePID.Out*3;
+		// 角速度环实际值=陀螺仪Y轴（原始数据，不被修改）
 		wPID.Actual = gyro_y;
 		PID_Update(&wPID);
 
-		// 直接输出，不加软启动、不加最小力（那些是坑）
-		AvePWM = -(int16_t)wPID.Out;
+		// ========== 核心修复：外部放大+软启动+最小出力（不碰PID结构体） ==========
+		// 1. 外部放大3倍：解决小角度PID输出太小、电机不动的问题
+		float wOut_Amp = wPID.Out * 3.0f;
 
-		// 限幅
-		if(AvePWM > 50) AvePWM = 50;
-		if(AvePWM < -50) AvePWM = -50;
+		// 2. 软启动：限制每次输出变化量，解决一动就猛冲
+		static float last_wOut = 0.0f;
+		float delta = wOut_Amp - last_wOut;
+		if(delta > 2.0f) wOut_Amp = last_wOut + 2.0f;
+		if(delta < -2.0f) wOut_Amp = last_wOut - 2.0f;
+		last_wOut = wOut_Amp;
 
-		LeftPWM  = AvePWM;
-		RightPWM = AvePWM;
+		// 3. 转换为PWM（取反保持原来的方向逻辑）
+		AvePWM = - (int16_t)wOut_Amp;
 
-		// 电机输出
+		// 4. 最小出力：消除电机启动阈值（比之前更小，8→5，更柔和）
+		if (AvePWM > 0 && AvePWM < 5)  AvePWM = 5;
+		if (AvePWM < 0 && AvePWM > -5) AvePWM = -5;
+
+		// 5. PWM分配（转向环暂时为0，不影响）
+		LeftPWM = AvePWM + DifPWM/2;
+		RightPWM = AvePWM - DifPWM/2;
+
+		// 6. 最终限幅（保持和PID OutMax一致，不超量程）
+		if (LeftPWM > 80) LeftPWM = 80;
+		if (LeftPWM < -80) LeftPWM = -80;
+		if (RightPWM > 80) RightPWM = 80;
+		if (RightPWM < -80) RightPWM = -80;
+
+		// 7. 电机输出（保持原来的350倍，不改动）
 		Motor_SetSpeedleft(LeftPWM * 350);
 		Motor_SetSpeedright(RightPWM * 350);
 	}
-    // ========== 3. 速度环/转向环暂时关闭（先站稳）==========
+
+    // ========== 3. 50ms执行速度环+转向环 ==========
 	if(cnt2==50 && system_init_ok)
 	{
 		cnt2=0;
-		// 清空编码器（保留，但不计算速度）
-		LeftSpeed = 0;
-		RightSpeed = 0;
-		AveSpeed = 0;
-		DifSpeed = 0;
-		SpeedPID.Out = 0;
-		TurnPID.Out = 0;
-		DifPWM = 0;
+		LeftSpeed = Get_Encoder_Data_Left()/13.0/34/0.05;	
+		RightSpeed = Get_Encoder_Data_Right()/13.0/34/0.05;
+		AveSpeed=(LeftSpeed+RightSpeed)/2.0;
+		DifSpeed=LeftSpeed-RightSpeed;
+		
+		SpeedPID.Actual=AveSpeed;
+		PID_Update(&SpeedPID);
+		AnglePID.Target=SpeedPID.Out*3.0f;
+		
+		TurnPID.Actual=DifSpeed;
+		PID_Update(&TurnPID);
+		DifPWM=TurnPID.Out;
 	}	
 	
     // ========== 4. 50ms清空编码器 ==========
