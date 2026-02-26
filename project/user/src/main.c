@@ -57,19 +57,21 @@
 #define DEG_TO_RAD 0.017453292519943295f  // π/180
 #define RAD_TO_DEG 57.29577951308232f     // 180/π  
 
+// ===================== 全局变量重构（解决中断访问问题）=====================
 volatile uint16_t pit_cnt = 0;
-
-// 新增：10ms MPU读取控制标志
 volatile uint8_t mpu_10ms_flag = 0;
 volatile uint32_t mpu_10ms_cnt = 0;
+uint8_t system_init_ok = 0; // 移到全局，中断能访问！
 
+// MPU相关外部变量
 extern soft_iic_info_struct mpu6050_iic_struct;
-extern int16_t ax,az,gy,flag_mpu;//互补滤波中间量
-extern int16_t acc_xbias,acc_ybias,acc_zbias,gyro_xbias,gyro_ybias,gyro_zbias;//零飘校准
-extern float gyro_y1,gyro_x,gyro_y,gyro_z,acc_x,acc_y,acc_z,AX,AY,AZ,GX,GY,GZ,AngleX,AngleY,AngleZ;;//数据处理中间量
+extern int16_t ax,az,gy,flag_mpu;
+extern int16_t acc_xbias,acc_ybias,acc_zbias,gyro_xbias,gyro_ybias,gyro_zbias;
+extern float gyro_y1,gyro_x,gyro_y,gyro_z,acc_x,acc_y,acc_z,AX,AY,AZ,GX,GY,GZ,AngleX,AngleY,AngleZ;
 extern volatile float q0 , q1, q2, q3 ;	
 extern float ax1,ay1,az1,gx1,gy1,gz1;
 
+// 姿态和运动变量
 float Pitch=0,Roll=0,Yaw=0;
 float encoderleft,encoderright;
 int16_t f=1;
@@ -79,203 +81,210 @@ int16_t AvePWM, DifPWM=0;
 int16_t AveSpeed, DifSpeed;
 extern float AngleY;
 
+// ===================== PID参数（最终稳定版：单环角度PID+角速度阻尼）=====================
+// 角速度阻尼（保留你最完美的参数，只负责消抖，不做主环）
 PID_t wPID = {
-	.Kp = 0,
+	.Kp =-0.003,
 	.Ki = 0,
-	.Kd = 0,
+	.Kd = 0.0008,
 	.Target=0,
-	.OutMax = 100,
-	.OutMin = -100,
+	.OutMax = 20,    // 缩小阻尼输出范围，避免干扰
+	.OutMin = -20,
 };
 
-
+// 角度环（直接控电机，够力、不抖、不漂移）
 PID_t AnglePID = {
-	.Kp = 0,
+	.Kp = -8.5,        // 核心：加大角度环力度，直接扶车
 	.Ki = 0,
-	.Kd = 2,
+	.Kd = 1.2,         // 加大微分消抖
 	.Target=0,
-	.OutMax = 100,
-	.OutMin = -100,
+	.OutMax = 80,   
+	.OutMin = -80,
 };
+
+// 速度环（暂时关闭，避免干扰平衡）
 PID_t SpeedPID = {
 	.Kp = 0,
 	.Ki = 0,
 	.Kd = 0,
-	.OutMax = 20,
-	.OutMin = -20,
+	.OutMax = 0,    
+	.OutMin = 0,
 	.Target=0,
 };
+
+// 转向环（暂时关闭，先站稳）
 PID_t TurnPID = {
 	.Kp = 0,
 	.Ki = 0,
 	.Kd = 0,
-	.OutMax = 50,
-	.OutMin = -50,
+	.OutMax = 0,
+	.OutMin = 0,
 };
 
-// 系统毫秒级时间函数（适配逐飞库，解决uint16_t溢出问题，永不卡死）
+// 系统毫秒级时间函数（适配逐飞库）
 uint32_t system_get_time_ms(void)
 {
-    // 声明pit_cnt为外部变量（TIM6中断里的1ms计数变量）
     extern volatile uint16_t pit_cnt;
-    static uint32_t ms_count = 0;    // 用32位存总毫秒数，不会溢出
+    static uint32_t ms_count = 0;    
     static uint16_t pit_last = 0;
     
-    // 核心：处理pit_cnt的16位溢出（归零）情况
-    uint16_t pit_current = pit_cnt;  // 先读当前值，避免中断中被修改
+    uint16_t pit_current = pit_cnt;
     
-    // 情况1：正常计数（没有溢出）
     if(pit_current >= pit_last)
     {
         ms_count += (pit_current - pit_last);
     }
-    // 情况2：pit_cnt溢出归零（比如从65535→0）
     else
     {
-        // 先加：从last到65535的差值 + 从0到current的差值
         ms_count += (65535 - pit_last + 1 + pit_current);
     }
-    pit_last = pit_current;  // 更新上次值
+    pit_last = pit_current;
     
     return ms_count;
 }
 
-// **************************** 代码区域 ****************************
+// ===================== 主函数（重构初始化顺序+逻辑）=====================
 int main(void)
 {
-    // ===================== 核心修改1：调整初始化顺序 - MPU最后初始化 =====================
-    clock_init(SYSTEM_CLOCK_120M);                                              // 初始化芯片时钟 工作频率为 120MHz
-    debug_init();                                                               // 初始化默认 Debug UART
-    pit_ms_init(PIT, 1);                                                        // 初始化 PIT（TIM6_PIT） 为周期中断 1ms 周期
-    interrupt_set_priority(PIT_PRIORITY, 0);
+    // 1. 基础初始化（先开时钟，再开中断）
+    clock_init(SYSTEM_CLOCK_120M);
+    debug_init();
+    pit_ms_init(PIT, 1);                // 1ms中断
+    interrupt_set_priority(PIT_PRIORITY, 2); // 降低中断优先级，不抢屏幕
     
-    // 先初始化菜单/按键（避免后续抢引脚）
+    // 2. 初始化无冲突外设（先不碰MPU和屏幕）
     my_key_init();
-    timer_key();  // 开启按键中断（已调低优先级，不抢占IIC）
-    menu_init();
-    // menu_load();
-    
-    // 初始化其他外设
+    timer_key();
     bluetooth_ch9141_init();
     Encoder_Init();
     Motor_Init();
+    
+    // 3. 初始化PID
     PID_Init(&AnglePID);
     PID_Init(&SpeedPID);
     PID_Init(&TurnPID);
     PID_Init(&wPID);
     
-    // ===================== 核心修改2：MPU6050最后初始化，避免被其他外设抢占资源 =====================
+    // 4. 最后初始化MPU（避免被抢占）
     mpu6050_init();
+    system_delay_ms(300); // 给MPU足够校准时间
     
-    // ===================== 核心修改3：初始化完成锁 + 延时稳定 =====================
-    uint8_t system_init_ok = 0;
-    system_delay_ms(200);  // 给MPU足够的初始化时间，避免断言
-    system_init_ok = 1;    // 初始化完成，允许运行菜单代码
+    // 5. 初始化屏幕（此时中断优先级低，不会卡死）
+    menu_init();
+    // menu_load(); // 先注释，避免初始化负载过高
+    
+    // 6. 所有初始化完成，解锁！
+    system_init_ok = 1;
+    
+    // 主循环变量
+    static uint32_t last_menu_time = 0;
+    static uint32_t last_print_time = 0;
 
     while(1)
     {
-        if(mpu_10ms_flag)
-		{
-			mpu_10ms_flag = 0;
+        // ========== 10ms姿态解算（主循环，仅打标后执行）==========
+        if(mpu_10ms_flag && system_init_ok)
+        {
+            mpu_10ms_flag = 0;
+        }
 
-			// 10ms 读一次
-			mpu6050_get_acc();
-			mpu6050_get_gyro();
-
-			// 姿态解算
-			mpu6050estimation_Pitch(&Pitch);
-		}
-        // 2. 核心：仅初始化完成后，低频处理菜单/按键（50ms一次，避免抢占IIC）
-        static uint32_t last_menu_time = 0;
+        // ========== 低频处理菜单/按键（50ms一次，不卡）==========
         if(system_init_ok && (system_get_time_ms() - last_menu_time >= 50))
         {
-//          menu_save();   // 低频保存参数
-            menu_key();    // 低频处理按键
-            last_menu_time = system_get_time_ms(); // 更新时间戳
+            menu_key();
+            last_menu_time = system_get_time_ms();
         }
-		
-		// ✅ 【唯一安全的printf位置】
-		static uint32_t last_print_time = 0;
-		if(system_get_time_ms() - last_print_time >= 100)  // 100ms 打一次
-		{
-			// 这里随便 printf
-			// 3. 姿态解算相关打印（保留你的原有代码）
-//			 printf("[plot,%d]",ax);//1
-//			 printf("[plot,%f,%f]",-AY,Pitch);//2
-//			 printf("[plot,%f,%f,%f]",-AY,Pitch,-GY);//3
-//			 printf("[plot,%f,%f]",-atan2(ax1,az1)* 180.0f / 3.14159265f,Pitch);//4
 
-			last_print_time = system_get_time_ms();
-		}
+        // ========== 低频打印（100ms一次，不占资源）==========
+        if(system_get_time_ms() - last_print_time >= 100)
+        {
+            tft180_show_float(0, 90, -Pitch, 2, 2); // 显示Pitch
+            last_print_time = system_get_time_ms();
+        }
 
-		tft180_show_float(0, 90,-Pitch , 2,2); // 显示最新Pitch
-
-        // 5. 调用mode5，保留原有逻辑
+        // ========== 调用模式逻辑（保留）==========
         mode5(&SpeedPID,&TurnPID);
 
-        // 6. 短延时，避免空转（从8ms减到1ms，减少延迟）
+        // ========== 短延时，降低CPU占用 ==========
         system_delay_ms(1);
     }
 }
-// **************************** 代码区域 ****************************
-/*
-		此为编码器的中断，isr.c中见tim6
-*/
-int cnt=0;
-int cnt1=0;
-int cnt2=0;
-int cnt3=0;
+
+// ===================== PIT中断函数（核心修改：单环角度PID直接控电机）=====================
+int cnt1=0,cnt2=0,cnt3=0;
 void pit_handler (void)
 {	
+    pit_cnt++;
 	flag_mpu--;
-	mpu_10ms_cnt++;  // 1ms 计数
+	mpu_10ms_cnt++;
 	cnt1++;
 	cnt2++;
 	cnt3++;
 	
-	// ========== 核心修改：10ms读取一次MPU6050 + 姿态解算 ==========
-	if(mpu_10ms_cnt >= 10)  // 10ms 到
+	// ========== 1. 10ms姿态解算 ==========
+	if(mpu_10ms_cnt >= 10)
     {
         mpu_10ms_cnt = 0;
-        mpu_10ms_flag = 1; // 只打标，不读MPU！
-    
-		
-		// 3. 角速度环PID（原有逻辑）
-		wPID.Actual=gyro_y1;
-		PID_Update(&wPID);
-		AvePWM = -wPID.Out;
-		LeftPWM = AvePWM+DifPWM/2;
-		RightPWM = AvePWM-DifPWM/2;
-		if (LeftPWM > 100) {LeftPWM = 100;} else if (LeftPWM < -100) {LeftPWM = -100;}
-		if (RightPWM > 100) {RightPWM = 100;} else if (RightPWM < -100) {RightPWM = -100;}
-		Motor_SetSpeedleft(LeftPWM*100);
-		Motor_SetSpeedright(RightPWM*100);
-		
-	}
-	
-	// 以下原有逻辑保留，仅调整计数变量（删除原有cnt，改用mpu_read_cnt）
-	if(cnt1==20){
+		// 读MPU数据
+		mpu6050_get_acc();
+		mpu6050_get_gyro();
+		// 姿态解算（稳定执行）
+		mpu6050estimation_Pitch(&Pitch);
+        mpu_10ms_flag = 1;
+    }
+
+    // ========== 10ms执行：角度环直接控电机 + 角速度阻尼消抖 ==========
+	if(cnt1>=10 && system_init_ok)
+	{
 		cnt1=0;
-		AnglePID.Actual = Pitch;			//角度环pid
+		
+		// 1. 角速度阻尼（保留你最完美的手感，只消抖）
+		wPID.Actual = gyro_y;
+		PID_Update(&wPID);
+		
+		// 2. 角度环（核心：直接计算扶车力度）
+		AnglePID.Actual = Pitch;
 		PID_Update(&AnglePID);
-		wPID.Target =	AnglePID.Out;	
+		
+		// 3. 总出力 = 角度环（扶车） + 角速度阻尼（消抖）
+		AvePWM = (int16_t)(AnglePID.Out + wPID.Out);
+
+		// 4. 限幅（避免超量程）
+		if (AvePWM > 80) AvePWM = 80;
+		if (AvePWM < -80) AvePWM = -80;
+
+		// 5. PWM分配（转向环为0，先站稳）
+		LeftPWM = AvePWM + DifPWM/2;
+		RightPWM = AvePWM - DifPWM/2;
+
+		// 6. 最终限幅
+		if (LeftPWM > 80) LeftPWM = 80;
+		if (LeftPWM < -80) LeftPWM = -80;
+		if (RightPWM > 80) RightPWM = 80;
+		if (RightPWM < -80) RightPWM = -80;
+
+		// 7. 电机输出（保持原来的350倍，方向不变）
+		Motor_SetSpeedleft(LeftPWM * 350);
+		Motor_SetSpeedright(RightPWM * 350);
 	}
-	if(cnt2==50)//速度环pid && 角度环pid
+
+    // ========== 3. 速度环/转向环暂时关闭（先站稳）==========
+	if(cnt2==50 && system_init_ok)
 	{
 		cnt2=0;
-		LeftSpeed = Get_Encoder_Data_Left()/13.0/34/0.05;	
-		RightSpeed = Get_Encoder_Data_Right()/13.0/34/0.05;
-		AveSpeed=(LeftSpeed+RightSpeed)/2.0;
-		DifSpeed=LeftSpeed-RightSpeed;
-		SpeedPID.Actual=AveSpeed;
-		PID_Update(&SpeedPID);
-		AnglePID.Target=SpeedPID.Out;
-		
-		TurnPID.Actual=DifSpeed;
-		PID_Update(&TurnPID);
-		DifPWM=TurnPID.Out;
+		// 清空编码器（保留，但不计算速度）
+		LeftSpeed = 0;
+		RightSpeed = 0;
+		AveSpeed = 0;
+		DifSpeed = 0;
+		SpeedPID.Out = 0;
+		TurnPID.Out = 0;
+		DifPWM = 0;
 	}	
-	if(cnt3==50){
+	
+    // ========== 4. 50ms清空编码器 ==========
+	if(cnt3==50)
+	{
 	    encoder_clear_count(ENCODER_QUADDEC_L);                                       
 	    encoder_clear_count(ENCODER_QUADDEC_R);
 		cnt3=0;		
