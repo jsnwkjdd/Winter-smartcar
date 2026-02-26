@@ -83,18 +83,18 @@ extern float AngleY;
 
 // ===================== PID参数（优化后，不抖）=====================
 PID_t wPID = {
-	.Kp =-0.005,
+	.Kp = -0.07,
 	.Ki = 0,
-	.Kd = 0.0008,
+	.Kd = 0,
 	.Target=0,
 	.OutMax = 80,    
 	.OutMin = -80,
 };
 
 PID_t AnglePID = {
-	.Kp = -4,        
+	.Kp = 0,        
 	.Ki = 0,
-	.Kd = 0.5,         
+	.Kd = 0,         
 	.Target=0,
 	.OutMax = 80,   
 	.OutMin = -80,
@@ -249,22 +249,22 @@ void pit_handler (void)
 		PID_Update(&wPID);
 
 		// ========== 核心修复：外部放大+软启动+最小出力（不碰PID结构体） ==========
-		// 1. 外部放大3倍：解决小角度PID输出太小、电机不动的问题
-		float wOut_Amp = wPID.Out * 3.0f;
+//		// 1. 外部放大3倍：解决小角度PID输出太小、电机不动的问题
+//		float wOut_Amp = wPID.Out * 3.0f;
 
-		// 2. 软启动：限制每次输出变化量，解决一动就猛冲
-		static float last_wOut = 0.0f;
-		float delta = wOut_Amp - last_wOut;
-		if(delta > 2.0f) wOut_Amp = last_wOut + 2.0f;
-		if(delta < -2.0f) wOut_Amp = last_wOut - 2.0f;
-		last_wOut = wOut_Amp;
+//		// 2. 软启动：限制每次输出变化量，解决一动就猛冲
+//		static float last_wOut = 0.0f;
+//		float delta = wOut_Amp - last_wOut;
+//		if(delta > 2.0f) wOut_Amp = last_wOut + 2.0f;
+//		if(delta < -2.0f) wOut_Amp = last_wOut - 2.0f;
+//		last_wOut = wOut_Amp;
 
 		// 3. 转换为PWM（取反保持原来的方向逻辑）
-		AvePWM = - (int16_t)wOut_Amp;
+		AvePWM = - (int16_t)wPID.Out;
 
-		// 4. 最小出力：消除电机启动阈值（比之前更小，8→5，更柔和）
-		if (AvePWM > 0 && AvePWM < 5)  AvePWM = 5;
-		if (AvePWM < 0 && AvePWM > -5) AvePWM = -5;
+//		// 4. 最小出力：消除电机启动阈值（比之前更小，8→5，更柔和）
+//		if (AvePWM > 0 && AvePWM < 5)  AvePWM = 5;
+//		if (AvePWM < 0 && AvePWM > -5) AvePWM = -5;
 
 		// 5. PWM分配（转向环暂时为0，不影响）
 		LeftPWM = AvePWM + DifPWM/2;
@@ -277,8 +277,8 @@ void pit_handler (void)
 		if (RightPWM < -80) RightPWM = -80;
 
 		// 7. 电机输出（保持原来的350倍，不改动）
-		Motor_SetSpeedleft(LeftPWM * 350);
-		Motor_SetSpeedright(RightPWM * 350);
+		Motor_SetSpeedleft(LeftPWM * 100);
+		Motor_SetSpeedright(RightPWM * 100);
 	}
 
     // ========== 3. 50ms执行速度环+转向环 ==========

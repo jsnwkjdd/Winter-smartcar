@@ -98,15 +98,15 @@ void menu_key(void)
             }
             else
             {
-                if(hang==1) AnglePID.Ki+=0.01;
-                else if(hang==2) AnglePID.Kd+=0.01;
-                else if(hang==3) AnglePID.Kp+=0.01;
+                if(hang==1) AnglePID.Ki+=0.1;
+                else if(hang==2) AnglePID.Kd+=0.1;
+                else if(hang==3) AnglePID.Kp+=0.1;
 				else if(hang==4) SpeedPID.Ki+=0.01;
                 else if(hang==5) SpeedPID.Kd+=0.1;
                 else if(hang==6) SpeedPID.Kp+=0.01;
 				else if(hang==7) wPID.Ki+=0.01;
                 else if(hang==8) wPID.Kd+=0.01;
-                else if(hang==9) wPID.Kp+=0.001;
+                else if(hang==9) wPID.Kp+=0.01;
             }	
         }
     }
@@ -129,15 +129,15 @@ void menu_key(void)
             }
             else
             {
-                if(hang==1)  AnglePID.Ki-=0.01;
-                else if(hang==2) AnglePID.Kd-=0.01;
-                else if(hang==3) AnglePID.Kp-=0.01;
+                if(hang==1)  AnglePID.Ki-=0.1;
+                else if(hang==2) AnglePID.Kd-=0.1;
+                else if(hang==3) AnglePID.Kp-=0.1;
 				else if(hang==4) SpeedPID.Ki-=0.01;
                 else if(hang==5) SpeedPID.Kd-=0.1;
                 else if(hang==6) SpeedPID.Kp-=0.01;
 				else if(hang==7) wPID.Ki-=0.01;
                 else if(hang==8) wPID.Kd-=0.01;
-                else if(hang==9) wPID.Kp-=0.001;
+                else if(hang==9) wPID.Kp-=0.01;
             }	
         }
     }
