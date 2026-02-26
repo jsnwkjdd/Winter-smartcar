@@ -94,12 +94,12 @@ PID_t wPID = {
 
 // 角度环（直接控电机，够力、不抖、不漂移）
 PID_t AnglePID = {
-	.Kp = -8.5,        // 核心：加大角度环力度，直接扶车
+	.Kp = -1.8,        // 核心：加大角度环力度，直接扶车
 	.Ki = 0,
-	.Kd = 1.2,         // 加大微分消抖
+	.Kd = 0.3,         // 加大微分消抖
 	.Target=0,
-	.OutMax = 80,   
-	.OutMin = -80,
+	.OutMax = 50,   
+	.OutMin = -50,
 };
 
 // 速度环（暂时关闭，避免干扰平衡）
@@ -233,41 +233,34 @@ void pit_handler (void)
         mpu_10ms_flag = 1;
     }
 
-    // ========== 10ms执行：角度环直接控电机 + 角速度阻尼消抖 ==========
+    // 10ms 控制
 	if(cnt1>=10 && system_init_ok)
 	{
 		cnt1=0;
-		
-		// 1. 角速度阻尼（保留你最完美的手感，只消抖）
-		wPID.Actual = gyro_y;
-		PID_Update(&wPID);
-		
-		// 2. 角度环（核心：直接计算扶车力度）
+
+		// 角度环
 		AnglePID.Actual = Pitch;
 		PID_Update(&AnglePID);
-		
-		// 3. 总出力 = 角度环（扶车） + 角速度阻尼（消抖）
-		AvePWM = (int16_t)(AnglePID.Out + wPID.Out);
 
-		// 4. 限幅（避免超量程）
-		if (AvePWM > 80) AvePWM = 80;
-		if (AvePWM < -80) AvePWM = -80;
+		// 串级：角度环输出 → 角速度环目标
+		wPID.Target = AnglePID.Out * 6;   // 放大 6 倍，温和
+		wPID.Actual = gyro_y;
+		PID_Update(&wPID);
 
-		// 5. PWM分配（转向环为0，先站稳）
-		LeftPWM = AvePWM + DifPWM/2;
-		RightPWM = AvePWM - DifPWM/2;
+		// 直接输出，不加软启动、不加最小力（那些是坑）
+		AvePWM = -(int16_t)wPID.Out;
 
-		// 6. 最终限幅
-		if (LeftPWM > 80) LeftPWM = 80;
-		if (LeftPWM < -80) LeftPWM = -80;
-		if (RightPWM > 80) RightPWM = 80;
-		if (RightPWM < -80) RightPWM = -80;
+		// 限幅
+		if(AvePWM > 50) AvePWM = 50;
+		if(AvePWM < -50) AvePWM = -50;
 
-		// 7. 电机输出（保持原来的350倍，方向不变）
+		LeftPWM  = AvePWM;
+		RightPWM = AvePWM;
+
+		// 电机输出
 		Motor_SetSpeedleft(LeftPWM * 350);
 		Motor_SetSpeedright(RightPWM * 350);
 	}
-
     // ========== 3. 速度环/转向环暂时关闭（先站稳）==========
 	if(cnt2==50 && system_init_ok)
 	{
