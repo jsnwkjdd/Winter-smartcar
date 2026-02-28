@@ -3,7 +3,7 @@
 #include <math.h>
 
  
-float t=0.01,zero=1  ,A_ration=0.04,AlphaPitch = 0.02;//t角速度积分，和定时中断同步/zero机械零点/
+float t=0.01,zero=1,A_ration=0.04,AlphaPitch = 0.02;//t角速度积分，和定时中断同步/zero机械零点/
 
 extern soft_iic_info_struct mpu6050_iic_struct;
 float AlphaX = 0.001;//互补滤波参数

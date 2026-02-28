@@ -92,7 +92,7 @@ PID_t wPID = {
 };
 
 PID_t AnglePID = {
-	.Kp = -8,        
+	.Kp = -5.5,        
 	.Ki = 0,
 	.Kd = 0,         
 	.Target=0,
@@ -101,11 +101,11 @@ PID_t AnglePID = {
 };
 
 PID_t SpeedPID = {
-	.Kp = 0,
+	.Kp = 25,
 	.Ki = 0,
 	.Kd = 0,
-	.OutMax = 18,    // 缩小速度环输出范围
-	.OutMin = -18,
+	.OutMax = 40,    // 缩小速度环输出范围
+	.OutMin = -40,
 	.Target=0,
 };
 
@@ -292,7 +292,7 @@ void pit_handler (void)
 		
 		SpeedPID.Actual=AveSpeed;
 		PID_Update(&SpeedPID);
-		AnglePID.Target=SpeedPID.Out*3.0f;
+		AnglePID.Target=SpeedPID.Out*3.0f-0.3;
 		
 		TurnPID.Actual=DifSpeed;
 		PID_Update(&TurnPID);
