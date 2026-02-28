@@ -70,8 +70,8 @@ void mpu6050estimation_Pitch(float*Pitch)
 	gyro_y = mpu6050_gyro_transition(gy);//角速度计转化为物理量°/s
 	
 	
-	filterax(&acc_x,0.9);//一阶滤波
-	filteraz(&acc_z,0.9);
+	filterax(&acc_x,0.4);//一阶滤波
+	filteraz(&acc_z,0.4);
 	filtergy(&gyro_y,0.9);
 	
 	

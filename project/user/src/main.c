@@ -101,7 +101,7 @@ PID_t AnglePID = {
 };
 
 PID_t SpeedPID = {
-	.Kp = 25,
+	.Kp = 1,
 	.Ki = 0,
 	.Kd = 0,
 	.OutMax = 40,    // 缩小速度环输出范围
@@ -282,7 +282,7 @@ void pit_handler (void)
 	}
 
     // ========== 3. 50ms执行速度环+转向环 ==========
-	if(cnt2==50 && system_init_ok)
+	if(cnt2>=50 && system_init_ok)
 	{
 		cnt2=0;
 		LeftSpeed = Get_Encoder_Data_Left()/13.0/34/0.05;	
@@ -292,7 +292,7 @@ void pit_handler (void)
 		
 		SpeedPID.Actual=AveSpeed;
 		PID_Update(&SpeedPID);
-		AnglePID.Target=SpeedPID.Out*3.0f-0.3;
+		AnglePID.Target=SpeedPID.Out*3.0f;
 		
 		TurnPID.Actual=DifSpeed;
 		PID_Update(&TurnPID);
@@ -300,7 +300,7 @@ void pit_handler (void)
 	}	
 	
     // ========== 4. 50ms清空编码器 ==========
-	if(cnt3==50)
+	if(cnt3>=50)
 	{
 	    encoder_clear_count(ENCODER_QUADDEC_L);                                       
 	    encoder_clear_count(ENCODER_QUADDEC_R);
