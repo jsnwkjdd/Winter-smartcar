@@ -83,7 +83,7 @@ extern float AngleY;
 
 // ===================== PID参数（优化后，不抖）=====================
 PID_t wPID = {
-	.Kp = -0.07,
+	.Kp = -0.05,
 	.Ki = 0,
 	.Kd = 0,
 	.Target=0,
@@ -92,7 +92,7 @@ PID_t wPID = {
 };
 
 PID_t AnglePID = {
-	.Kp = 0,        
+	.Kp = -8,        
 	.Ki = 0,
 	.Kd = 0,         
 	.Target=0,
