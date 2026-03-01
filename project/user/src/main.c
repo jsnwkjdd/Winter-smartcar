@@ -89,9 +89,14 @@ float AvePWM, DifPWM=0;
 float AveSpeed, DifSpeed;
 extern float AngleY;
 
+// 新增：速度低通滤波缓存
+float AveSpeed_Filtered = 0.0f;
+// 新增：角度环目标值缓变缓存
+float AnglePID_Target_Smooth = 0.0f;
+
 // ===================== PID参数（优化后，不抖）=====================
 PID_t wPID = {
-	.Kp = -0.04 ,
+	.Kp = 0.04,
 	.Ki = 0,
 	.Kd = 0,
 	.Target=0,
@@ -100,9 +105,9 @@ PID_t wPID = {
 };
 
 PID_t AnglePID = {
-	.Kp = 10,        
+	.Kp = -54,        
 	.Ki = 0,
-	.Kd = 0,         
+	.Kd = -1.32,         
 	.Target=0,
 	.OutMax = 8000,   
 	.OutMin = -8000,
@@ -112,8 +117,8 @@ PID_t SpeedPID = {
 	.Kp = 0,
 	.Ki = 0,
 	.Kd = 0,
-	.OutMax = 40,    // 缩小速度环输出范围
-	.OutMin = -40,
+	.OutMax = 15,    // 缩小速度环输出范围
+	.OutMin = -15,
 	.Target=0,
 };
 
@@ -185,6 +190,8 @@ int main(void)
     static uint32_t last_print_time = 0;
 	// 新增：主循环PWM输出的计时
     static uint32_t last_pwm_time = 0;
+	
+	SpeedPID.Ki=SpeedPID.Kp/200;
 
     while(1)
     {
@@ -222,8 +229,8 @@ int main(void)
         if(system_init_ok && ((uint32_t)(system_get_time_ms() - last_pwm_time) >= 10))
         {
             // 从缓存读取PWM值，输出到电机
-            Motor_SetSpeedleft(9000);
-            Motor_SetSpeedright(9000);
+            Motor_SetSpeedleft(LeftPWM_Cache * 100);
+            Motor_SetSpeedright(RightPWM_Cache * 100);
             last_pwm_time = system_get_time_ms();
         }
 
@@ -264,6 +271,7 @@ void pit_handler (void)
 	if(cnt1>=10 && system_init_ok)
 	{
 		cnt1=0;
+		
 		// 角度环：用Pitch和目标值对比（姿态解算数据纯纯的，不被修改）
 		AnglePID.Actual = Pitch;
 		PID_Update(&AnglePID);
@@ -285,7 +293,7 @@ void pit_handler (void)
 //		last_wOut = wOut_Amp;
 
 		// 3. 转换为PWM（取反保持原来的方向逻辑）
-		AvePWM = - wPID.Out;
+		AvePWM = wPID.Out;
 
 //		// 4. 最小出力：消除电机启动阈值（比之前更小，8→5，更柔和）
 //		if (AvePWM > 0 && AvePWM < 5)  AvePWM = 5;
@@ -323,10 +331,13 @@ void pit_handler (void)
 		AveSpeed=(LeftSpeed+RightSpeed)/2.0;
 		DifSpeed=LeftSpeed-RightSpeed;
 		
+		// 关键修改2：速度低通滤波（α=0.2，平滑噪声）
+		AveSpeed_Filtered = 0.2f * AveSpeed + 0.8f * AveSpeed_Filtered;
+		
 		// 第三步：更新速度环PID
-		SpeedPID.Actual=AveSpeed;
+		SpeedPID.Actual=AveSpeed_Filtered;
 		PID_Update(&SpeedPID);
-		AnglePID.Target=SpeedPID.Out*3.0f+2.0f;
+		AnglePID.Target=SpeedPID.Out+2.0f;
 		
 		// 第四步：更新转向环PID
 		TurnPID.Actual=DifSpeed;
