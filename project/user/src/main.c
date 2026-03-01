@@ -84,14 +84,14 @@ int16_t f=1;
 float LeftSpeed,RightSpeed;
 float encoder_left_cache; 
 float encoder_right_cache;
-int16_t LeftPWM, RightPWM;
-int16_t AvePWM, DifPWM=0;
-int16_t AveSpeed, DifSpeed;
+float LeftPWM, RightPWM;
+float AvePWM, DifPWM=0;
+float AveSpeed, DifSpeed;
 extern float AngleY;
 
 // ===================== PID参数（优化后，不抖）=====================
 PID_t wPID = {
-	.Kp = -0.05,
+	.Kp = -0.04 ,
 	.Ki = 0,
 	.Kd = 0,
 	.Target=0,
@@ -100,16 +100,16 @@ PID_t wPID = {
 };
 
 PID_t AnglePID = {
-	.Kp = -5.5,        
+	.Kp = 10,        
 	.Ki = 0,
 	.Kd = 0,         
 	.Target=0,
-	.OutMax = 80,   
-	.OutMin = -80,
+	.OutMax = 8000,   
+	.OutMin = -8000,
 };
 
 PID_t SpeedPID = {
-	.Kp = 1,
+	.Kp = 0,
 	.Ki = 0,
 	.Kd = 0,
 	.OutMax = 40,    // 缩小速度环输出范围
@@ -212,6 +212,9 @@ int main(void)
             tft180_show_float(0, 90, -Pitch, 2, 2); // 显示Pitch
 			tft180_show_float(0, 100, SpeedPID.Out, 2, 4); // 显示Pitch
 			tft180_show_float(0, 110, AveSpeed, 2, 4); // 显示Pitch
+			tft180_show_float(0, 120, AnglePID.Out, 2, 4);
+			tft180_show_float(0, 130, wPID.Target, 2, 4);
+			tft180_show_float(0, 140, AvePWM, 2, 4);
             last_print_time = system_get_time_ms();
         }
 		
@@ -219,8 +222,8 @@ int main(void)
         if(system_init_ok && ((uint32_t)(system_get_time_ms() - last_pwm_time) >= 10))
         {
             // 从缓存读取PWM值，输出到电机
-            Motor_SetSpeedleft(1000);//LeftPWM_Cache * 100);
-            Motor_SetSpeedright(1000);//RightPWM_Cache * 100);
+            Motor_SetSpeedleft(9000);
+            Motor_SetSpeedright(9000);
             last_pwm_time = system_get_time_ms();
         }
 
@@ -265,7 +268,7 @@ void pit_handler (void)
 		AnglePID.Actual = Pitch;
 		PID_Update(&AnglePID);
 		// 角速度环：目标值=角度环输出
-		wPID.Target = AnglePID.Out*3;
+		wPID.Target = AnglePID.Out;
 		// 角速度环实际值=陀螺仪Y轴（原始数据，不被修改）
 		wPID.Actual = gyro_y;
 		PID_Update(&wPID);
@@ -282,7 +285,7 @@ void pit_handler (void)
 //		last_wOut = wOut_Amp;
 
 		// 3. 转换为PWM（取反保持原来的方向逻辑）
-		AvePWM = - (int16_t)wPID.Out;
+		AvePWM = - wPID.Out;
 
 //		// 4. 最小出力：消除电机启动阈值（比之前更小，8→5，更柔和）
 //		if (AvePWM > 0 && AvePWM < 5)  AvePWM = 5;
@@ -323,7 +326,7 @@ void pit_handler (void)
 		// 第三步：更新速度环PID
 		SpeedPID.Actual=AveSpeed;
 		PID_Update(&SpeedPID);
-		AnglePID.Target=SpeedPID.Out*3.0f;
+		AnglePID.Target=SpeedPID.Out*3.0f+2.0f;
 		
 		// 第四步：更新转向环PID
 		TurnPID.Actual=DifSpeed;
