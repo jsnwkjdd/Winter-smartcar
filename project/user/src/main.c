@@ -200,6 +200,8 @@ int main(void)
         if(system_get_time_ms() - last_print_time >= 100)
         {
             tft180_show_float(0, 90, -Pitch, 2, 2); // 显示Pitch
+			tft180_show_float(0, 100, SpeedPID.Out, 2, 2); // 显示Pitch
+			tft180_show_float(0, 110, AveSpeed, 2, 2); // 显示Pitch
             last_print_time = system_get_time_ms();
         }
 
@@ -276,7 +278,7 @@ void pit_handler (void)
 		if (RightPWM > 80) RightPWM = 80;
 		if (RightPWM < -80) RightPWM = -80;
 
-		// 7. 电机输出（保持原来的350倍，不改动）
+		// 7. 电机输出（保持原来的100倍，不改动）
 		Motor_SetSpeedleft(LeftPWM * 100);
 		Motor_SetSpeedright(RightPWM * 100);
 	}
