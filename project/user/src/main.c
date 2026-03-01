@@ -63,6 +63,12 @@ volatile uint8_t mpu_10ms_flag = 0;
 volatile uint32_t mpu_10ms_cnt = 0;
 uint8_t system_init_ok = 0; // 移到全局，中断能访问！
 
+// ===================== 全局变量新增（缓存PWM值）=====================
+// 新增：缓存PWM值，中断里计算、主循环里输出
+volatile int16_t LeftPWM_Cache = 0;
+volatile int16_t RightPWM_Cache = 0;
+
+
 // MPU相关外部变量
 extern soft_iic_info_struct mpu6050_iic_struct;
 extern int16_t ax,az,gy,flag_mpu;
@@ -76,6 +82,8 @@ float Pitch=0,Roll=0,Yaw=0;
 float encoderleft,encoderright;
 int16_t f=1;
 float LeftSpeed,RightSpeed;
+float encoder_left_cache; 
+float encoder_right_cache;
 int16_t LeftPWM, RightPWM;
 int16_t AvePWM, DifPWM=0;
 int16_t AveSpeed, DifSpeed;
@@ -175,6 +183,8 @@ int main(void)
     // 主循环变量
     static uint32_t last_menu_time = 0;
     static uint32_t last_print_time = 0;
+	// 新增：主循环PWM输出的计时
+    static uint32_t last_pwm_time = 0;
 
     while(1)
     {
@@ -190,20 +200,30 @@ int main(void)
         }
 
         // ========== 低频处理菜单/按键（50ms一次，不卡）==========
-        if(system_init_ok && (system_get_time_ms() - last_menu_time >= 50))
+        if(system_init_ok && ((uint32_t)(system_get_time_ms() - last_menu_time) >= 50))
         {
             menu_key();
             last_menu_time = system_get_time_ms();
         }
 
         // ========== 低频打印（100ms一次，不占资源）==========
-        if(system_get_time_ms() - last_print_time >= 100)
+        if((uint32_t)(system_get_time_ms() - last_print_time) >= 100)
         {
             tft180_show_float(0, 90, -Pitch, 2, 2); // 显示Pitch
-			tft180_show_float(0, 100, SpeedPID.Out, 2, 2); // 显示Pitch
-			tft180_show_float(0, 110, AveSpeed, 2, 2); // 显示Pitch
+			tft180_show_float(0, 100, SpeedPID.Out, 2, 4); // 显示Pitch
+			tft180_show_float(0, 110, AveSpeed, 2, 4); // 显示Pitch
             last_print_time = system_get_time_ms();
         }
+		
+		// ========== 核心修改：10ms在主循环输出PWM ==========
+        if(system_init_ok && ((uint32_t)(system_get_time_ms() - last_pwm_time) >= 10))
+        {
+            // 从缓存读取PWM值，输出到电机
+            Motor_SetSpeedleft(1000);//LeftPWM_Cache * 100);
+            Motor_SetSpeedright(1000);//RightPWM_Cache * 100);
+            last_pwm_time = system_get_time_ms();
+        }
+
 
         // ========== 调用模式逻辑（保留）==========
         mode5(&SpeedPID,&TurnPID);
@@ -269,39 +289,49 @@ void pit_handler (void)
 //		if (AvePWM < 0 && AvePWM > -5) AvePWM = -5;
 
 		// 5. PWM分配（转向环暂时为0，不影响）
-		LeftPWM = AvePWM + DifPWM/2;
-		RightPWM = AvePWM - DifPWM/2;
-
-		// 6. 最终限幅（保持和PID OutMax一致，不超量程）
-		if (LeftPWM > 80) LeftPWM = 80;
-		if (LeftPWM < -80) LeftPWM = -80;
-		if (RightPWM > 80) RightPWM = 80;
-		if (RightPWM < -80) RightPWM = -80;
-
-		// 7. 电机输出（保持原来的100倍，不改动）
-		Motor_SetSpeedleft(LeftPWM * 100);
-		Motor_SetSpeedright(RightPWM * 100);
+		LeftPWM_Cache = AvePWM + DifPWM/2;
+		RightPWM_Cache = AvePWM - DifPWM/2;
+		
+		// PWM限幅（缓存值）
+		if (LeftPWM_Cache > 80) LeftPWM_Cache = 80;
+		if (LeftPWM_Cache < -80) LeftPWM_Cache = -80;
+		if (RightPWM_Cache > 80) RightPWM_Cache = 80;
+		if (RightPWM_Cache < -80) RightPWM_Cache = -80;
+		
+//		// 7. 电机输出（保持原来的100倍，不改动）
+//		Motor_SetSpeedleft(LeftPWM * 100);
+//		Motor_SetSpeedright(RightPWM * 100);
 	}
 
-    // ========== 3. 50ms执行速度环+转向环 ==========
+   // ========== 3. 50ms执行：先缓存编码器数值 ==========
 	if(cnt2>=50 && system_init_ok)
 	{
 		cnt2=0;
-		LeftSpeed = Get_Encoder_Data_Left()/13.0/34/0.05;	
-		RightSpeed = Get_Encoder_Data_Right()/13.0/34/0.05;
+		// 第一步：先读取编码器数值并缓存，避免后续清空丢失
+		encoder_left_cache = encoder_get_count(ENCODER_QUADDEC_L);
+		encoder_right_cache = encoder_get_count(ENCODER_QUADDEC_R);
+		
+//		encoder_clear_count(ENCODER_QUADDEC_L);                                       
+//	    encoder_clear_count(ENCODER_QUADDEC_R);
+		
+		// 第二步：计算速度（用缓存的数值）
+		LeftSpeed = encoder_left_cache /13.0/34/0.05;	
+		RightSpeed = encoder_right_cache /13.0/34/0.05;
 		AveSpeed=(LeftSpeed+RightSpeed)/2.0;
 		DifSpeed=LeftSpeed-RightSpeed;
 		
+		// 第三步：更新速度环PID
 		SpeedPID.Actual=AveSpeed;
 		PID_Update(&SpeedPID);
 		AnglePID.Target=SpeedPID.Out*3.0f;
 		
+		// 第四步：更新转向环PID
 		TurnPID.Actual=DifSpeed;
 		PID_Update(&TurnPID);
 		DifPWM=TurnPID.Out;
 	}	
 	
-    // ========== 4. 50ms清空编码器 ==========
+    // ========== 4. 50ms清空编码器（在速度计算完成后）=========
 	if(cnt3>=50)
 	{
 	    encoder_clear_count(ENCODER_QUADDEC_L);                                       
