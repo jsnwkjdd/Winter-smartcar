@@ -105,9 +105,9 @@ PID_t wPID = {
 };
 
 PID_t AnglePID = {
-	.Kp = -54,        
-	.Ki = 0,
-	.Kd = -1.32,         
+	.Kp = 54,        
+	.Ki = 1.32,
+	.Kd = 0,         
 	.Target=0,
 	.OutMax = 8000,   
 	.OutMin = -8000,
@@ -216,10 +216,10 @@ int main(void)
         // ========== 低频打印（100ms一次，不占资源）==========
         if((uint32_t)(system_get_time_ms() - last_print_time) >= 100)
         {
-            tft180_show_float(0, 90, -Pitch, 2, 2); // 显示Pitch
+            tft180_show_float(0, 90, Pitch, 2, 2); // 显示Pitch
 			tft180_show_float(0, 100, SpeedPID.Out, 2, 4); // 显示Pitch
 			tft180_show_float(0, 110, AveSpeed, 2, 4); // 显示Pitch
-			tft180_show_float(0, 120, AnglePID.Out, 2, 4);
+			tft180_show_float(0, 120, AnglePID.Target, 2, 4);
 			tft180_show_float(0, 130, wPID.Target, 2, 4);
 			tft180_show_float(0, 140, AvePWM, 2, 4);
             last_print_time = system_get_time_ms();
@@ -337,7 +337,7 @@ void pit_handler (void)
 		// 第三步：更新速度环PID
 		SpeedPID.Actual=AveSpeed_Filtered;
 		PID_Update(&SpeedPID);
-		AnglePID.Target=SpeedPID.Out+2.0f;
+		AnglePID.Target=SpeedPID.Out;
 		
 		// 第四步：更新转向环PID
 		TurnPID.Actual=DifSpeed;
