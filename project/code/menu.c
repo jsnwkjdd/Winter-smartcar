@@ -41,7 +41,7 @@ void show(void)
 		tft180_show_string (0,60,hang==7?">ki3":"ki3");
 		tft180_show_string (0,70,hang==8?">kd3":"kd3");
 		tft180_show_string (0,80,hang==9?">kp3":"kp3");
-		tft180_show_float(40, 0, AnglePID.Ki, 3,3);
+		tft180_show_float(40, 0, AnglePID.Ki, 3,4);
 		tft180_show_float(40, 10, AnglePID.Kd, 3,3);
 		tft180_show_float(40, 20, AnglePID.Kp, 3,3);
 		tft180_show_float(40, 30, SpeedPID.Ki, 3,3);
@@ -98,9 +98,9 @@ void menu_key(void)
             }
             else
             {
-                if(hang==1) AnglePID.Ki+=0.1;
-                else if(hang==2) AnglePID.Kd+=0.1;
-                else if(hang==3) AnglePID.Kp+=1;
+                if(hang==1) AnglePID.Ki+=0.001;
+                else if(hang==2) AnglePID.Kd+=0.005;
+                else if(hang==3) AnglePID.Kp+=0.5;
 				else if(hang==4) SpeedPID.Ki+=0.01;
                 else if(hang==5) SpeedPID.Kd+=0.1;
                 else if(hang==6) SpeedPID.Kp+=1;
@@ -129,9 +129,9 @@ void menu_key(void)
             }
             else
             {
-                if(hang==1)  AnglePID.Ki-=0.1;
-                else if(hang==2) AnglePID.Kd-=0.1;
-                else if(hang==3) AnglePID.Kp-=1;
+                if(hang==1)  AnglePID.Ki-=0.01;
+                else if(hang==2) AnglePID.Kd-=0.01;
+                else if(hang==3) AnglePID.Kp-=0.1;
 				else if(hang==4) SpeedPID.Ki-=0.01;
                 else if(hang==5) SpeedPID.Kd-=0.1;
                 else if(hang==6) SpeedPID.Kp-=1;
