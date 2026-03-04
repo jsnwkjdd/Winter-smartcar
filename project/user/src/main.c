@@ -196,15 +196,15 @@ int main(void)
     while(1)
     {
         // ========== 10ms姿态解算（主循环，仅打标后执行）==========
-        if(mpu_10ms_flag && system_init_ok)
-        {
-            mpu_10ms_flag = 0;
-//            // 读MPU数据
-//            mpu6050_get_acc();
-//            mpu6050_get_gyro();
-//            // 姿态解算（稳定执行）
-//            mpu6050estimation_Pitch(&Pitch);
-        }
+//        if(mpu_10ms_flag && system_init_ok)
+//        {
+//            mpu_10ms_flag = 0;
+////            // 读MPU数据
+////            mpu6050_get_acc();
+////            mpu6050_get_gyro();
+////            // 姿态解算（稳定执行）
+////            mpu6050estimation_Pitch(&Pitch);
+//        }
 
         // ========== 低频处理菜单/按键（50ms一次，不卡）==========
         if(system_init_ok && ((uint32_t)(system_get_time_ms() - last_menu_time) >= 50))
@@ -244,7 +244,7 @@ int main(void)
 }
 
 // ===================== PIT中断函数（重构执行逻辑）=====================
-int cnt1=0,cnt2=0,cnt3=0;
+int cnt1=0,cnt2=0,cnt3=0,cnt4=0;
 void pit_handler (void)
 {	
     pit_cnt++;
@@ -253,21 +253,43 @@ void pit_handler (void)
 	cnt1++;
 	cnt2++;
 	cnt3++;
+	cnt4++;
 	
 	// ========== 1. 10ms标记 ==========
-	if(mpu_10ms_cnt >= 10)
-    {
-        mpu_10ms_cnt = 0;
-		mpu_10ms_flag = 0;
-		// 读MPU数据
+//	if(mpu_10ms_cnt >= 10)
+//    {
+//        mpu_10ms_cnt = 0;
+//		mpu_10ms_flag = 0;
+//		// 读MPU数据
+////		mpu6050_get_acc();
+////		mpu6050_get_gyro();
+//		// 姿态解算（稳定执行）
+//		mpu6050estimation_Pitch(&Pitch);
+//        mpu_10ms_flag = 1;
+//    }
+	//5ms角速度
+	if(cnt4>=5 && system_init_ok)
+	{
+		cnt4=0;
 		mpu6050_get_acc();
 		mpu6050_get_gyro();
-		// 姿态解算（稳定执行）
 		mpu6050estimation_Pitch(&Pitch);
-        mpu_10ms_flag = 1;
-    }
+//		wPID.Actual = mpu6050_gyro_transition(mpu6050_gyro_y+6);
+		wPID.Actual = gyro_y;
+		PID_Update(&wPID);
+		AvePWM = wPID.Out;
+		// 5. PWM分配（转向环暂时为0，不影响）
+		LeftPWM_Cache = AvePWM + DifPWM/2;
+		RightPWM_Cache = AvePWM - DifPWM/2;
+		
+		// PWM限幅（缓存值）
+		if (LeftPWM_Cache > 80) LeftPWM_Cache = 80;
+		if (LeftPWM_Cache < -80) LeftPWM_Cache = -80;
+		if (RightPWM_Cache > 80) RightPWM_Cache = 80;
+		if (RightPWM_Cache < -80) RightPWM_Cache = -80;
+	}
 
-    // ========== 10ms执行角度环+角速度环 ==========
+    // ========== 10ms执行角度环 ==========
 	if(cnt1>=10 && system_init_ok)
 	{
 		cnt1=0;
@@ -278,8 +300,8 @@ void pit_handler (void)
 		// 角速度环：目标值=角度环输出
 		wPID.Target = AnglePID.Out;
 		// 角速度环实际值=陀螺仪Y轴（原始数据，不被修改）
-		wPID.Actual = gyro_y;
-		PID_Update(&wPID);
+//		wPID.Actual = gyro_y;
+//		PID_Update(&wPID);
 
 		// ========== 核心修复：外部放大+软启动+最小出力（不碰PID结构体） ==========
 //		// 1. 外部放大3倍：解决小角度PID输出太小、电机不动的问题
@@ -293,21 +315,21 @@ void pit_handler (void)
 //		last_wOut = wOut_Amp;
 
 		// 3. 转换为PWM（取反保持原来的方向逻辑）
-		AvePWM = wPID.Out;
+//		AvePWM = wPID.Out;
 
 //		// 4. 最小出力：消除电机启动阈值（比之前更小，8→5，更柔和）
 //		if (AvePWM > 0 && AvePWM < 5)  AvePWM = 5;
 //		if (AvePWM < 0 && AvePWM > -5) AvePWM = -5;
 
-		// 5. PWM分配（转向环暂时为0，不影响）
-		LeftPWM_Cache = AvePWM + DifPWM/2;
-		RightPWM_Cache = AvePWM - DifPWM/2;
-		
-		// PWM限幅（缓存值）
-		if (LeftPWM_Cache > 80) LeftPWM_Cache = 80;
-		if (LeftPWM_Cache < -80) LeftPWM_Cache = -80;
-		if (RightPWM_Cache > 80) RightPWM_Cache = 80;
-		if (RightPWM_Cache < -80) RightPWM_Cache = -80;
+//		// 5. PWM分配（转向环暂时为0，不影响）
+//		LeftPWM_Cache = AvePWM + DifPWM/2;
+//		RightPWM_Cache = AvePWM - DifPWM/2;
+//		
+//		// PWM限幅（缓存值）
+//		if (LeftPWM_Cache > 80) LeftPWM_Cache = 80;
+//		if (LeftPWM_Cache < -80) LeftPWM_Cache = -80;
+//		if (RightPWM_Cache > 80) RightPWM_Cache = 80;
+//		if (RightPWM_Cache < -80) RightPWM_Cache = -80;
 		
 //		// 7. 电机输出（保持原来的100倍，不改动）
 //		Motor_SetSpeedleft(LeftPWM * 100);

@@ -207,7 +207,7 @@ uint8 mpu6050_init (void)
             break;
         }
         mpu6050_write_register(MPU6050_PWR_MGMT_1, 0x00);                       // 解除休眠状态
-        mpu6050_write_register(MPU6050_SMPLRT_DIV, 0x07);                       // 125HZ采样率
+        mpu6050_write_register(MPU6050_SMPLRT_DIV, 0x04);                       // 125HZ采样率
         mpu6050_write_register(MPU6050_CONFIG, 0x04);
 
         mpu6050_write_register(MPU6050_GYRO_CONFIG, MPU6050_GYR_SAMPLE);        // 2000
