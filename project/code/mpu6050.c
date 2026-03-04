@@ -3,7 +3,7 @@
 #include <math.h>
 
  
-float t=0.01,zero=-2,A_ration=0.04,AlphaPitch = 0.02;//t角速度积分，和定时中断同步/zero机械零点/
+float t=0.01,zero=-2,A_ration=0.04,AlphaPitch = 0.01;//t角速度积分，和定时中断同步/zero机械零点/
 
 extern soft_iic_info_struct mpu6050_iic_struct;
 float AlphaX = 0.001;//互补滤波参数
@@ -35,7 +35,7 @@ void mpu6050estimation_Pitch(float*Pitch)
 //	mpu6050_gyro_y-=0;
 	ax=mpu6050_acc_x+100;
     az=mpu6050_acc_z+191;
-    gy=mpu6050_gyro_y+4;
+    gy=mpu6050_gyro_y+6;
 
 	
 	//限幅滤波
@@ -70,8 +70,8 @@ void mpu6050estimation_Pitch(float*Pitch)
 	gyro_y = mpu6050_gyro_transition(gy);//角速度计转化为物理量°/s
 	
 	
-	filterax(&acc_x,0.4);//一阶滤波
-	filteraz(&acc_z,0.4);
+	filterax(&acc_x,0.5);//一阶滤波
+	filteraz(&acc_z,0.5);
 	filtergy(&gyro_y,0.9);
 	
 	

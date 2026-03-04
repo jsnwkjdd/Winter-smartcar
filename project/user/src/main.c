@@ -105,8 +105,8 @@ PID_t wPID = {
 };
 
 PID_t AnglePID = {
-	.Kp = 54,        
-	.Ki = 1.32,
+	.Kp = 0,        
+	.Ki = 0,
 	.Kd = 0,         
 	.Target=0,
 	.OutMax = 8000,   
@@ -221,7 +221,7 @@ int main(void)
 			tft180_show_float(0, 110, AveSpeed, 2, 4); // 显示Pitch
 			tft180_show_float(0, 120, AnglePID.Target, 2, 4);
 			tft180_show_float(0, 130, wPID.Target, 2, 4);
-			tft180_show_float(0, 140, AvePWM, 2, 4);
+			tft180_show_float(0, 140, gy, 2, 4);
             last_print_time = system_get_time_ms();
         }
 		
