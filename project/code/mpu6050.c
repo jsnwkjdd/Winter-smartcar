@@ -3,14 +3,14 @@
 #include <math.h>
 
  
-float t=0.005,zero=-2.5,A_ration=0.04,AlphaPitch = 0.01;//t角速度积分，和定时中断同步/zero机械零点/
+float t=0.005,zero=-1,A_ration=0.04,AlphaPitch = 0.0038;//t角速度积分，和定时中断同步/zero机械零点/
 
 extern soft_iic_info_struct mpu6050_iic_struct;
 float AlphaX = 0.001;//互补滤波参数
 int16_t acc_xbias,acc_ybias,acc_zbias,gyro_xbias,gyro_ybias,gyro_zbias;//零飘校准
 float gyro_x,gyro_y,gyro_z,acc_x,acc_y,acc_z,gyro_y1;//数据处理中间量
 float AX,AY,AZ,GX,GY,GZ,AngleX,AngleY,AngleZ;
-int16_t ax,az,gy,flag_mpu=0;//互补滤波中间量
+int16_t ax,az,gy,flag_mpu=30;//互补滤波中间量
 void filterax(float*a,float alpha);
 void filteraz(float* a, float alpha);
 void filtergy(float* a, float alpha);
@@ -35,7 +35,7 @@ void mpu6050estimation_Pitch(float*Pitch)
 //	mpu6050_gyro_y-=0;
 	ax=mpu6050_acc_x+100;
     az=mpu6050_acc_z+191;
-    gy=mpu6050_gyro_y+6;
+    gy=mpu6050_gyro_y+5.5;
 
 	
 	//限幅滤波

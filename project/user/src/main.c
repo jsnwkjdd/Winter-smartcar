@@ -105,9 +105,9 @@ PID_t wPID = {
 };
 
 PID_t AnglePID = {
-	.Kp = 35.4,        
-	.Ki = 0,
-	.Kd = 0.0,         
+	.Kp = 39.8*0.8,        
+	.Ki = 0.001*0.8,
+	.Kd = 0.019*0.8,         
 	.Target=0,
 	.OutMax = 8000,   
 	.OutMin = -8000,
@@ -217,6 +217,8 @@ int main(void)
         if((uint32_t)(system_get_time_ms() - last_print_time) >= 100)
         {
             tft180_show_float(0, 90, Pitch, 2, 2); // 显示Pitch
+//			tft180_show_float(0, 100, AY, 2, 4);
+//			tft180_show_float(0, 110, GY, 2, 4);
 			tft180_show_float(0, 100, wPID.Out, 2, 4); // 显示Pitch
 //			tft180_show_float(0, 110, wPID.Target, 2, 4);
 			tft180_show_float(50, 110, AnglePID.Out, 2, 4); 

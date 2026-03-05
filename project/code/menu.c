@@ -99,7 +99,7 @@ void menu_key(void)
             else
             {
                 if(hang==1) AnglePID.Ki+=0.001;
-                else if(hang==2) AnglePID.Kd+=0.005;
+                else if(hang==2) AnglePID.Kd+=0.001;
                 else if(hang==3) AnglePID.Kp+=0.5;
 				else if(hang==4) SpeedPID.Ki+=0.01;
                 else if(hang==5) SpeedPID.Kd+=0.1;
@@ -130,7 +130,7 @@ void menu_key(void)
             else
             {
                 if(hang==1)  AnglePID.Ki-=0.01;
-                else if(hang==2) AnglePID.Kd-=0.01;
+                else if(hang==2) AnglePID.Kd-=0.003;
                 else if(hang==3) AnglePID.Kp-=0.1;
 				else if(hang==4) SpeedPID.Ki-=0.01;
                 else if(hang==5) SpeedPID.Kd-=0.1;
