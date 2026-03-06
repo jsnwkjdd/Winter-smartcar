@@ -15,9 +15,9 @@ void Motor_Init(void)
 }
 void Motor_SetSpeedleft(int16_t Speed)
 {		
-		if(Speed > 0)Speed+= 375;
-		if(Speed < 0)Speed -= 375;  
-		if(Speed > 9000)Speed= 9000;
+		if(Speed > 0)Speed+= 370-4;
+		if(Speed < 0)Speed -= 390-4+24;
+	if(Speed > 9000)Speed= 9000;
 		if(Speed < -9000)Speed = -9000;  
 		if (Speed >= 0)							//如果设置正转的速度值
 	{
@@ -34,8 +34,8 @@ void Motor_SetSpeedleft(int16_t Speed)
 }
 void Motor_SetSpeedright(int16_t Speed)
 {	
-		if(Speed > 0)Speed+= 430;
-		if(Speed < 0)Speed -= 430; 
+		if(Speed > 0)Speed+= 395-4;
+		if(Speed < 0)Speed -=395-4+24;
 		if(Speed > 9000)Speed= 9000;
 		if(Speed < -9000)Speed = -9000;  
 		if (Speed >= 0)							//如果设置正转的速度值

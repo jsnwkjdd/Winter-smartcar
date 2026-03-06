@@ -105,9 +105,9 @@ PID_t wPID = {
 };
 
 PID_t AnglePID = {
-	.Kp = 39.8*0.8,        
-	.Ki = 0.001*0.8,
-	.Kd = 0.019*0.8,         
+	.Kp = 43.6,        
+	.Ki = 0.001,
+	.Kd = 0.046,         
 	.Target=0,
 	.OutMax = 8000,   
 	.OutMin = -8000,
@@ -225,7 +225,7 @@ int main(void)
 //			tft180_show_float(0, 120, AnglePID.Target, 2, 4);
 			tft180_show_float(50, 120, SpeedPID.Out, 2, 4); // 显示Pitch
 //			tft180_show_float(0, 130, SpeedPID.Target, 2, 4); 
-//			tft180_show_float(50, 130, AveSpeed, 2, 4); // 显示Pitch
+			tft180_show_float(50, 130, AveSpeed, 2, 4); // 显示Pitch
 //			tft180_show_float(0, 140, gy, 2, 4);
             last_print_time = system_get_time_ms();
         }
@@ -236,8 +236,8 @@ int main(void)
             // 从缓存读取PWM值，输出到电机
             Motor_SetSpeedleft(LeftPWM_Cache * 100);
             Motor_SetSpeedright(RightPWM_Cache * 100);
-//			Motor_SetSpeedleft(4);
-//            Motor_SetSpeedright(-4);
+//			Motor_SetSpeedleft(-4);
+//            Motor_SetSpeedright(4);
             last_pwm_time = system_get_time_ms();
         }
 
