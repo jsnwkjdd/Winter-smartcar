@@ -95,7 +95,7 @@ float AveSpeed_Filtered = 0.0f;
 float AnglePID_Target_Smooth = 0.0f;
 
 // ===================== PID参数（优化后，不抖）=====================
-PID_t wPID = {
+PID_t wPID = {//+
 	.Kp = 0.045,
 	.Ki = 0,
 	.Kd = 0,
@@ -104,21 +104,21 @@ PID_t wPID = {
 	.OutMin = -80,
 };
 
-PID_t AnglePID = {
+PID_t AnglePID = {//+
 	.Kp = 43.6,        
-	.Ki = 0.001,
-	.Kd = 0.046,         
+	.Ki = 0.0015,
+	.Kd = 0.0,         
 	.Target=0,
 	.OutMax = 8000,   
 	.OutMin = -8000,
 };
 
-PID_t SpeedPID = {
+PID_t SpeedPID = {//+
 	.Kp = 0,
 	.Ki = 0,
 	.Kd = 0,
-	.OutMax = 15,    // 缩小速度环输出范围
-	.OutMin = -15,
+	.OutMax = 90,    // 缩小速度环输出范围
+	.OutMin = -90,
 	.Target=0,
 };
 
@@ -191,7 +191,7 @@ int main(void)
 	// 新增：主循环PWM输出的计时
     static uint32_t last_pwm_time = 0;
 	
-	SpeedPID.Ki=SpeedPID.Kp/200;
+//	SpeedPID.Ki=SpeedPID.Kp/200;
 
     while(1)
     {
@@ -227,6 +227,7 @@ int main(void)
 //			tft180_show_float(0, 130, SpeedPID.Target, 2, 4); 
 			tft180_show_float(50, 130, AveSpeed, 2, 4); // 显示Pitch
 //			tft180_show_float(0, 140, gy, 2, 4);
+//			printf("[plot,%f,%f,%f]",Pitch,AY,GY);
             last_print_time = system_get_time_ms();
         }
 		
@@ -344,7 +345,7 @@ void pit_handler (void)
 	}
 
    // ========== 3. 50ms执行：先缓存编码器数值 ==========
-	if(cnt2>=50 && system_init_ok)
+	if(cnt2>=20 && system_init_ok)
 	{
 		cnt2=0;
 		// 第一步：先读取编码器数值并缓存，避免后续清空丢失
@@ -355,13 +356,13 @@ void pit_handler (void)
 //	    encoder_clear_count(ENCODER_QUADDEC_R);
 		
 		// 第二步：计算速度（用缓存的数值）
-		LeftSpeed = encoder_left_cache /13.0/34/0.05;	
-		RightSpeed = encoder_right_cache /13.0/34/0.05;
+		LeftSpeed = encoder_left_cache /13.0/34.0/0.02;	
+		RightSpeed = encoder_right_cache /13.0/34.0/0.02;
 		AveSpeed=(LeftSpeed+RightSpeed)/2.0;
 		DifSpeed=LeftSpeed-RightSpeed;
 		
 		// 关键修改2：速度低通滤波（α=0.2，平滑噪声）
-		AveSpeed_Filtered = 0.2f * AveSpeed + 0.8f * AveSpeed_Filtered;
+		AveSpeed_Filtered = 0.8f * AveSpeed + 0.2f * AveSpeed_Filtered;
 		
 		// 第三步：更新速度环PID
 		SpeedPID.Actual=AveSpeed_Filtered;
@@ -375,7 +376,7 @@ void pit_handler (void)
 	}	
 	
     // ========== 4. 50ms清空编码器（在速度计算完成后）=========
-	if(cnt3>=50)
+	if(cnt3>=20)
 	{
 	    encoder_clear_count(ENCODER_QUADDEC_L);                                       
 	    encoder_clear_count(ENCODER_QUADDEC_R);
